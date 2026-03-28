@@ -24,6 +24,8 @@ class CurlExercise(BaseExercise):
         # Shoulder stability tracking
         self._prev_l_shoulder_y = None
         self._prev_r_shoulder_y = None
+        # Debounce to prevent impossible high-speed jitter
+        self.last_rep_time = 0.0
 
     def reset(self, hard_reset=False):
         super().reset(hard_reset)
@@ -101,37 +103,40 @@ class CurlExercise(BaseExercise):
             self.feedback = "Don't swing - keep elbows tucked!"
 
         # --- Rep counting with hysteresis ---
+        import time
+        current_time = time.time()
+
         # LEFT ARM
         if l_angle > 140:
             self.l_stage = "DOWN"
         if l_angle < 70 and self.l_stage == "DOWN":
             self.l_stage = "UP"
-            self.counter += 1
-            self.num_reps_rated += 1
-            # Calculate rep quality (0.0-1.0)
-            # More generous baseline (even a deep curl gets ~0.4 min)
-            rep_quality = max(0.4, 1.0 - abs(l_angle - 30) / 100)
-            if shoulder_moving: rep_quality = max(0.2, rep_quality - 0.2)
-            if l_torso_angle > 50: rep_quality = max(0.2, rep_quality - 0.1)
-            
-            self.score += rep_quality
-            self.feedback = "Good Rep! (Left)"
+            if current_time - self.last_rep_time > 0.4:  # Physical limit debounce
+                self.counter += 1
+                self.num_reps_rated += 1
+                self.last_rep_time = current_time
+                rep_quality = max(0.4, 1.0 - abs(l_angle - 30) / 100)
+                if shoulder_moving: rep_quality = max(0.2, rep_quality - 0.2)
+                if l_torso_angle > 50: rep_quality = max(0.2, rep_quality - 0.1)
+                
+                self.score += rep_quality
+                self.feedback = "Good Rep! (Left)"
 
         # RIGHT ARM
         if r_angle > 140:
             self.r_stage = "DOWN"
         if r_angle < 70 and self.r_stage == "DOWN":
             self.r_stage = "UP"
-            self.counter += 1
-            self.num_reps_rated += 1
-            # Calculate rep quality (0.0-1.0)
-            # More generous baseline (even a deep curl gets ~0.4 min)
-            rep_quality = max(0.4, 1.0 - abs(r_angle - 30) / 100)
-            if shoulder_moving: rep_quality = max(0.2, rep_quality - 0.2)
-            if r_torso_angle > 50: rep_quality = max(0.2, rep_quality - 0.1)
-            
-            self.score += rep_quality
-            self.feedback = "Good Rep! (Right)"
+            if current_time - self.last_rep_time > 0.4:
+                self.counter += 1
+                self.num_reps_rated += 1
+                self.last_rep_time = current_time
+                rep_quality = max(0.4, 1.0 - abs(r_angle - 30) / 100)
+                if shoulder_moving: rep_quality = max(0.2, rep_quality - 0.2)
+                if r_torso_angle > 50: rep_quality = max(0.2, rep_quality - 0.1)
+                
+                self.score += rep_quality
+                self.feedback = "Good Rep! (Right)"
 
         # Update combined stage display
         if active_arm == "left":

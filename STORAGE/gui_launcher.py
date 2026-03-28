@@ -6,8 +6,8 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QComboBox, QPushButton, 
                              QFileDialog, QMessageBox, QFrame, QScrollArea, QGridLayout,
                              QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, QPropertyAnimation, QRect
-from PyQt6.QtGui import QColor, QCursor
+from PyQt6.QtCore import Qt, QPropertyAnimation, QRect, QPoint, QEasingCurve
+from PyQt6.QtGui import QColor, QCursor, QLinearGradient, QGradient, QPalette
 
 def launch_setup_gui():
     """
@@ -20,7 +20,7 @@ def launch_setup_gui():
     
     result = {}
 
-    # Premium "Soft Pleasing" Aesthetics (Light Mode with Deep Shadows)
+    # Premium "Light Mode" Aesthetics (Soft Pleasing with Depth)
     APP_STYLESHEET = """
     * {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -37,12 +37,12 @@ def launch_setup_gui():
     /* Top Navbar */
     QWidget#NavBar {
         background-color: #FFFFFF;
-        border-bottom: 1px solid #E1E8ED;
+        border-bottom: 2px solid #E2E8F0;
     }
     
     QLabel#Logo {
-        color: #4A90E2; /* Pleasing Ocean Blue */
-        font-size: 28px;
+        color: #1A202C; /* Deep Slate Bold */
+        font-size: 30px;
         font-weight: 900;
         letter-spacing: 2px;
     }
@@ -50,10 +50,10 @@ def launch_setup_gui():
     QLineEdit#NavInput, QComboBox#NavInput {
         padding: 12px 20px;
         border-radius: 12px;
-        border: 1px solid #D1D9E6;
+        border: 1px solid #CBD5E0;
         font-size: 15px;
         font-weight: 600;
-        background-color: #F9FBFC;
+        background-color: #F8FAFC;
         color: #2D3748;
     }
     QLineEdit#NavInput:focus, QComboBox#NavInput:focus {
@@ -61,98 +61,104 @@ def launch_setup_gui():
         background-color: #FFFFFF;
     }
     
-    /* Hero Section (Soft Gradient) */
+    /* Hero Section (Soft Premium Gradient) */
     QWidget#Hero {
-        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #4A90E2, stop:1 #50E3C2);
-        border-radius: 20px;
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #4A90E2, stop:0.4 #357ABD, stop:1 #50E3C2);
+        border: 1px solid #E2E8F0;
+        border-radius: 24px;
     }
     QLabel#HeroTitle {
         color: #FFFFFF;
-        font-size: 44px;
+        font-size: 48px;
         font-weight: 900;
         margin-bottom: 5px;
-        letter-spacing: -1px;
+        letter-spacing: -2px;
     }
     QLabel#HeroSub {
-        color: #F4F7F6;
-        font-size: 18px;
+        color: #F1F5F9;
+        font-size: 20px;
         font-weight: 500;
     }
     
     /* Section Headings */
     QLabel#SectionTitle {
-        color: #2D3748;
-        font-size: 24px;
+        color: #1A202C;
+        font-size: 28px;
         font-weight: 900;
-        margin-top: 35px;
+        margin-top: 45px;
         margin-bottom: 15px;
-        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
     }
     
-    /* Workout Cards Base */
+    /* Workout Cards (Floating depth) */
     QFrame#HoverCard {
         background-color: #FFFFFF;
-        border-radius: 20px;
-        border: 1px solid #E1E8ED; /* Extremely soft border, relying on drop shadow */
+        border-radius: 24px;
+        border: 1px solid #E2E8F0;
     }
     
     QLabel#CardTitle {
         color: #2D3748;
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 900;
+        letter-spacing: -1px;
     }
     QLabel#CardDesc {
         color: #718096;
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 500;
         line-height: 1.5;
     }
     QLabel#Tag {
-        background-color: #EBF4FF;
+        background-color: #EDF2F7;
         color: #4A90E2;
         border-radius: 8px;
         font-size: 11px;
         font-weight: 800;
-        padding: 6px 12px;
+        padding: 5px 12px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
     }
     
     QPushButton#CardButton {
-        background-color: #4A90E2;
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A90E2, stop:1 #357ABD);
         color: #FFFFFF;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 800;
-        border-radius: 12px;
-        padding: 16px;
+        border-radius: 25px; /* Pill Shape */
+        padding: 18px;
         border: none;
     }
     QPushButton#CardButton:hover {
-        background-color: #357ABD;
-    }
-    QPushButton#CardButton:pressed {
-        background-color: #2A5D93;
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5AA0F2, stop:1 #458ACD);
     }
     
     /* Activity List */
     QFrame#HistoryBox {
         background-color: #FFFFFF;
-        border-radius: 20px;
-        border: 1px solid #E1E8ED;
+        border-radius: 28px;
+        border: 1px solid #E2E8F0;
     }
+    
+    /* Top Rank Highlights (Soft Lite tint) */
+    QWidget#GoldRow { background-color: #FFF9E6; border-radius: 16px; }
+    QWidget#SilverRow { background-color: #F7FAFC; border-radius: 16px; }
+    QWidget#BronzeRow { background-color: #FFF5F2; border-radius: 16px; }
+    
     QLabel#HistTitle {
         color: #2D3748;
-        font-size: 18px;
+        font-size: 19px;
         font-weight: 800;
     }
     QLabel#HistSub {
-        color: #A0AEC0;
-        font-size: 13px;
+        color: #718096;
+        font-size: 14px;
         font-weight: 500;
     }
     QLabel#HistScore {
-        color: #48BB78; /* Soft pleasing green */
-        font-size: 22px;
+        color: #48BB78;
+        font-size: 26px;
         font-weight: 900;
     }
     """
@@ -209,19 +215,20 @@ def launch_setup_gui():
             self.setMinimumWidth(280)
             
         def enterEvent(self, event):
-            # Interactive Pop: Increase shadow depth beautifully 
-            self.shadow.setBlurRadius(40)
-            self.shadow.setColor(QColor(0, 0, 0, 30))
-            self.shadow.setOffset(0, 20)
-            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 20px; border: 1px solid #4A90E2; margin-top: -5px; margin-bottom: 5px; }")
+            # Premium "Light Elevation" Effect
+            self.shadow.setBlurRadius(50)
+            self.shadow.setColor(QColor(0, 0, 0, 25))
+            self.shadow.setOffset(0, 15)
+            
+            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 24px; border: 2px solid #4A90E2; margin-top: -8px; margin-bottom: 8px; }")
             super().enterEvent(event)
             
         def leaveEvent(self, event):
-            # Return to soft shadow
+            # Return to base light state
             self.shadow.setBlurRadius(25)
             self.shadow.setColor(QColor(0, 0, 0, 15))
             self.shadow.setOffset(0, 10)
-            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 20px; border: 1px solid #E1E8ED; margin-top: 0px; margin-bottom: 0px; }")
+            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 24px; border: 1px solid #E2E8F0; margin-top: 0px; margin-bottom: 0px; }")
             super().leaveEvent(event)
 
         def trigger_workout(self):
@@ -306,7 +313,7 @@ def launch_setup_gui():
             
             self.nav_user = QLineEdit()
             self.nav_user.setObjectName("NavInput")
-            self.nav_user.setPlaceholderText("Athlete Name")
+            self.nav_user.setPlaceholderText("Name")
             self.nav_user.setFixedWidth(220)
             
             self.nav_voice = QComboBox()
@@ -417,27 +424,62 @@ def launch_setup_gui():
                     history_layout.addWidget(em)
                 else:
                     with open(csv_path, mode='r') as f:
-                        reader = list(csv.DictReader(f))
-                        reader.reverse() # Latest first
+                        reader = csv.DictReader(f)
                         
-                        limit = min(6, len(reader)) # Show top 6
+                        # Dictionary to keep highest Score per user per exercise:
+                        # key -> "Username_Exercise", value -> dict
+                        user_best = {}
+                        
+                        for row in reader:
+                            try:
+                                user = row.get("Username", "Athlete").strip().title()
+                                ex = row.get("Exercise", "Unknown").title()
+                                score = float(row.get("Score", 0))
+                                reps = float(row.get("Reps/Seconds", 0))
+                                date = row.get("Date", "")
+                                
+                                key = f"{user}_{ex}"
+                                if key not in user_best or score > user_best[key]['score']:
+                                    user_best[key] = {
+                                        'user': user,
+                                        'ex': ex,
+                                        'score': score,
+                                        'reps': reps,
+                                        'date': date
+                                    }
+                            except Exception:
+                                continue
+                                
+                        # Sort all best records globally purely by score to create a true Global Leaderboard
+                        sorted_records = sorted(user_best.values(), key=lambda x: x['score'], reverse=True)
+                        limit = min(6, len(sorted_records)) # Show Top 6 globally
+                        
                         for i in range(limit):
-                            row = reader[i]
+                            rec = sorted_records[i]
                             
                             row_widget = QWidget()
+                            
+                            # Specific Row Highlighting for top 3
+                            row_id = "GoldRow" if i == 0 else "SilverRow" if i == 1 else "BronzeRow" if i == 2 else "StandardRow"
+                            row_widget.setObjectName(row_id)
+                            
                             row_lyt = QHBoxLayout(row_widget)
-                            row_lyt.setContentsMargins(0, 5, 0, 5)
+                            row_lyt.setContentsMargins(15, 12, 15, 12)
                             
                             info_lyt = QVBoxLayout()
-                            t_lbl = QLabel(f"{row.get('Username', 'Athlete').title()} • {row.get('Exercise', 'Unknown').title()}")
+                            
+                            # Rank icon
+                            medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"#{i+1}"
+                            
+                            t_lbl = QLabel(f"{medal} {rec['user']} • {rec['ex']}")
                             t_lbl.setObjectName("HistTitle")
-                            sub_lbl = QLabel(f"{row.get('Date', '')} — {row.get('Reps/Seconds', 0)} Repetitions")
+                            sub_lbl = QLabel(f"{rec['date']} — {int(rec['reps'])} Repetitions")
                             sub_lbl.setObjectName("HistSub")
                             
                             info_lyt.addWidget(t_lbl)
                             info_lyt.addWidget(sub_lbl)
                             
-                            score_lbl = QLabel(f"SCORE: {row.get('Score', 0)}")
+                            score_lbl = QLabel(f"SCORE: {int(rec['score'])}")
                             score_lbl.setObjectName("HistScore")
                             
                             row_lyt.addLayout(info_lyt)
@@ -449,7 +491,7 @@ def launch_setup_gui():
                             if i < limit - 1:
                                 divider = QFrame()
                                 divider.setFixedHeight(1)
-                                divider.setStyleSheet("background-color: #E1E8ED;")
+                                divider.setStyleSheet("background-color: #EDF2F7;")
                                 history_layout.addWidget(divider)
             except Exception as e:
                 history_layout.addWidget(QLabel("Failed to sync leaderboard data."))
