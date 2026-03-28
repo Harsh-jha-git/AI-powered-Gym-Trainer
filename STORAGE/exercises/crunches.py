@@ -51,6 +51,11 @@ class CrunchExercise(BaseExercise):
         if crunch_angle < 120 and self.stage == "DOWN":
             self.stage = "UP"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(crunch_angle - 100) / 10)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep!"
 
         # Detailed feedback
@@ -59,10 +64,6 @@ class CrunchExercise(BaseExercise):
         elif 120 <= crunch_angle <= 140 and self.stage == "DOWN":
             self.feedback = "Crunch higher!"
 
-        # Score (ideal crunch ~ 100°)
-        if crunch_angle <= 150:
-            self.score = max(0, 100 - abs(crunch_angle - 100))
-        else:
-            self.score = 0
+        # --- Score logic moved to rep completion points above ---
 
         return frame

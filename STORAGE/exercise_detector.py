@@ -45,6 +45,7 @@ from exercises import (
     PlankExercise,
     CrunchExercise,
 )
+from ai_coach import AICoach
 
 # -----------------------------------------
 # MediaPipe Setup
@@ -159,6 +160,9 @@ cap, source_desc, use_mirror = select_input_source()
 
 username = input("\n  Enter your Username (for leaderboard): ").strip()
 
+gemini_key = input("  Enter your Gemini API Key (or press enter to skip AI coaching): ").strip()
+ai_coach = AICoach(gemini_key) if gemini_key else None
+
 # -----------------------------------------
 # Audio Coach Setup
 # -----------------------------------------
@@ -197,6 +201,11 @@ SWITCH_COOLDOWN = 2.0  # seconds
 
 # Video playback state
 paused = False
+
+# AI Coaching tracking
+last_ai_tip_time = time.time()
+AI_TIP_INTERVAL = 10.0  # seconds
+current_ai_tip = "AI Coach is analyzing your form..."
 
 
 def classify_exercise(landmarks):
@@ -385,6 +394,24 @@ while True:
                 except Exception:
                     pass
 
+            # --- Periodic AI Coaching ---
+            if ai_coach and (current_time - last_ai_tip_time) > AI_TIP_INTERVAL:
+                if current_exercise:
+                    metrics = {
+                        'exercise': current_exercise.NAME,
+                        'count': getattr(current_exercise, 'counter', 0) if current_exercise_key != 'plank' else getattr(current_exercise, 'hold_duration', 0),
+                        'score': current_exercise.score,
+                        'feedback': current_exercise.feedback
+                    }
+                    
+                    def speak_ai_tip(tip):
+                        global current_ai_tip
+                        current_ai_tip = tip
+                        audio_mgr.speak_feedback(f"AI Tip: {tip}")
+                        
+                    ai_coach.get_coaching_tip_async(metrics, speak_ai_tip)
+                    last_ai_tip_time = current_time
+
         # --- Status bars ---
         h, w = frame.shape[:2]
 
@@ -417,6 +444,12 @@ while True:
         # FPS counter
         cv2.putText(frame, f"FPS: {int(fps)}", (w - 150, h - 18),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1)
+
+        # AI Coaching tooltip (above bottom bar)
+        if ai_coach:
+            cv2.rectangle(frame, (0, h - 85), (w, h - 50), (40, 40, 40), -1)
+            cv2.putText(frame, f"AI COACH: {current_ai_tip}", (10, h - 62),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
         # Controls hint
         controls = "Q: Quit | R: Reset | M: Mute | P: Pause" if source_desc != "Webcam" else "Q: Quit | R: Reset | M: Mute"

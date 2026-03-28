@@ -13,7 +13,9 @@ class BaseExercise(ABC):
         self.counter = 0
         self.stage = None
         self.feedback = ""
-        self.score = 0
+        self.score = 0.0
+        self.total_quality = 0.0
+        self.num_reps_rated = 0
         self._audio_manager = None
         self._prev_feedback = ""
 
@@ -26,7 +28,9 @@ class BaseExercise(ABC):
         self.counter = 0
         self.stage = None
         self.feedback = ""
-        self.score = 0
+        self.score = 0.0
+        self.total_quality = 0.0
+        self.num_reps_rated = 0
         self._prev_feedback = ""
         if self._audio_manager:
             self._audio_manager.reset_tracking(self.NAME)
@@ -83,7 +87,7 @@ class BaseExercise(ABC):
         cv2.putText(frame, f'Stage: {self.stage or "—"}', (220, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
-        cv2.putText(frame, f'Score: {int(self.score)}', (10, 100),
+        cv2.putText(frame, f'Score: {self.score:.1f}/10', (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
 
         # Audio status indicator
@@ -129,7 +133,7 @@ class TimedExercise(BaseExercise):
         cv2.putText(frame, f'Hold: {int(self.hold_duration)}s', (10, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-        cv2.putText(frame, f'Score: {int(self.score)}', (220, 65),
+        cv2.putText(frame, f'Score: {self.score:.1f}/10', (220, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
 
         # Audio status indicator

@@ -48,6 +48,12 @@ class PushupExercise(BaseExercise):
         if arm_angle < 90 and self.stage == "UP":
             self.stage = "DOWN"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(arm_angle - 80) / 10)
+            if body_angle < 150 or body_angle > 175: rep_quality = max(0, rep_quality - 3)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep!"
 
         # Detailed feedback
@@ -62,10 +68,6 @@ class PushupExercise(BaseExercise):
         elif body_angle > 175:
             self.feedback = "Don't pike your hips!"
 
-        # Score
-        if arm_angle <= 155:
-            self.score = max(0, 100 - abs(arm_angle - 80))
-        else:
-            self.score = 0
+        # --- Score logic moved to rep completion points above ---
 
         return frame

@@ -48,25 +48,31 @@ class PlankExercise(TimedExercise):
             self.hold_duration = current_time - self.hold_start
 
             # Feedback based on alignment
+            frame_quality = 0
             if body_angle > 170:
                 self.feedback = "Perfect form!"
-                self.score = 100
+                frame_quality = 10
             elif body_angle > 160:
                 self.feedback = "Good form - stay tight!"
-                self.score = 80
+                frame_quality = 8
             else:
                 self.feedback = "Straighten your body!"
-                self.score = 60
+                frame_quality = 6
 
             # Hip sag detection
             if l_hip[1] > l_shoulder[1] + 0.05 and l_hip[1] > l_ankle[1]:
                 self.feedback = "Hips sagging - lift up!"
-                self.score = max(30, self.score - 30)
+                frame_quality = max(0, frame_quality - 4)
 
             # Hip pike detection
             if l_hip[1] < l_shoulder[1] - 0.05:
                 self.feedback = "Hips too high - lower them!"
-                self.score = max(30, self.score - 30)
+                frame_quality = max(0, frame_quality - 4)
+
+            # Accumulate quality and average it
+            self.total_quality += frame_quality
+            self.num_reps_rated += 1  # Using this as a 'frames rated' counter
+            self.score = self.total_quality / self.num_reps_rated
 
         else:
             # Not in plank
@@ -75,7 +81,7 @@ class PlankExercise(TimedExercise):
             else:
                 self.feedback = "Get into plank position"
             self.hold_start = None
-            self.score = 0
+            # We don't reset the session score here, as it's cumulative for the workout session
 
         # Draw hold time on frame
         if self.hold_duration > 0:

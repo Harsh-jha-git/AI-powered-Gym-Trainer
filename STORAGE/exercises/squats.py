@@ -46,6 +46,12 @@ class SquatExercise(BaseExercise):
         if angle < 100 and self.stage == "UP":
             self.stage = "DOWN"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(angle - 90) / 10)
+            if abs(l_knee[0] - l_ankle[0]) > 0.05: rep_quality = max(0, rep_quality - 2)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep!"
 
         # Detailed feedback
@@ -60,10 +66,6 @@ class SquatExercise(BaseExercise):
         if abs(l_knee[0] - l_ankle[0]) > 0.05:
             self.feedback = "Watch knee alignment!"
 
-        # Score (ideal squat ~ 90° knee angle)
-        if angle <= 160:
-            self.score = max(0, 100 - abs(angle - 90))
-        else:
-            self.score = 0
+        # --- Score logic moved to rep completion points above ---
 
         return frame

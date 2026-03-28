@@ -50,6 +50,12 @@ class PullupExercise(BaseExercise):
         if arm_angle < 80 and self.stage == "DOWN":
             self.stage = "UP"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(arm_angle - 60) / 10)
+            if chin_over: rep_quality = min(10.0, rep_quality + 2)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep!"
 
         # Detailed feedback
@@ -61,10 +67,6 @@ class PullupExercise(BaseExercise):
         if chin_over and self.stage == "UP":
             self.feedback = "Chin over bar - Perfect!"
 
-        # Score
-        if arm_angle <= 155:
-            self.score = max(0, 100 - abs(arm_angle - 60))
-        else:
-            self.score = 0
+        # --- Score logic moved to rep completion points above ---
 
         return frame

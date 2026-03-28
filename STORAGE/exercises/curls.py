@@ -85,6 +85,13 @@ class CurlExercise(BaseExercise):
         if l_angle < 70 and self.l_stage == "DOWN":
             self.l_stage = "UP"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(l_angle - 30) / 10)
+            if shoulder_moving: rep_quality = max(0, rep_quality - 2)
+            if l_torso_angle > 50: rep_quality = max(0, rep_quality - 1.5)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep! (Left)"
 
         # RIGHT ARM
@@ -93,6 +100,13 @@ class CurlExercise(BaseExercise):
         if r_angle < 70 and self.r_stage == "DOWN":
             self.r_stage = "UP"
             self.counter += 1
+            self.num_reps_rated += 1
+            # Calculate rep quality (0-10)
+            rep_quality = max(0, 10 - abs(r_angle - 30) / 10)
+            if shoulder_moving: rep_quality = max(0, rep_quality - 2)
+            if r_torso_angle > 50: rep_quality = max(0, rep_quality - 1.5)
+            self.total_quality += rep_quality
+            self.score = self.total_quality / self.num_reps_rated
             self.feedback = "Good Rep! (Right)"
 
         # Update combined stage display
@@ -133,14 +147,7 @@ class CurlExercise(BaseExercise):
             elif angle > 150:
                 self.feedback = "Fully extended - Ready"
 
-        # --- Score (ideal curl ~ 30°) ---
-        self.score = max(0, 100 - abs(angle - 30))
-
-        # Penalize bad form
-        if shoulder_moving:
-            self.score = max(0, self.score - 20)
-        if active_torso > 50:
-            self.score = max(0, self.score - 15)
+        # --- Score logic moved to rep completion points above ---
 
         return frame
 
