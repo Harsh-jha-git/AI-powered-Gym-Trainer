@@ -163,7 +163,7 @@ username = input("\n  Enter your Username (for leaderboard): ").strip()
 # Audio Coach Setup
 # -----------------------------------------
 voice_gender = select_voice()
-audio_mgr = AudioManager()
+audio_mgr = AudioManager(voice_gender=voice_gender)
 
 # Display size
 DISPLAY_W, DISPLAY_H = 1280, 720

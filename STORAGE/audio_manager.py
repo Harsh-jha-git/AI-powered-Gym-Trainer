@@ -269,9 +269,16 @@ if __name__ == '__main__':
 
     # Test female voice
     print("  Testing FEMALE voice...")
-    mgr = AudioManager()
+    mgr = AudioManager(voice_gender='female')
     time.sleep(0.5)
     mgr.speak_feedback("Testing female voice. Push through the pain!")
+    time.sleep(3)
+
+    # Test male voice
+    print("  Testing MALE voice...")
+    mgr_m = AudioManager(voice_gender='male')
+    time.sleep(0.5)
+    mgr_m.speak_feedback("Testing male voice. Stay strong!")
     time.sleep(3)
     mgr.shutdown()
 
