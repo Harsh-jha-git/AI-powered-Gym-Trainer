@@ -1,0 +1,24 @@
+Step 1: Open Terminal in the project folder
+powershell
+cd c:\Devopam\Engineering_CSE\SEM-4\PRAXIS-HACKATHON
+
+Step 2: Activate the virtual environment
+powershell
+
+& .\.venv\Scripts\Activate.ps1
+
+You'll see 
+
+(.venv)
+ appear at the start of your prompt, confirming it's active.
+
+Step 3: Run the script
+powershell
+python main.py
+Step 4: Deactivate when done (optional)
+powershell
+deactivate
+Alternative (without activating): You can skip activation and run directly using the venv's Python:
+
+powershell
+& .\.venv\Scripts\python.exe main.py

@@ -1,0 +1,191 @@
+PS4 — AI-Based Human Action Analysis Using Video Domain: 
+
+Computer Vision / Video Analytics Problem Statement Create an AI system that analyzes human 
+activity recognition from video input to evaluate movement quality, coordination, and performance. 
+
+The system may be applied to sports training, rehabilitation, or skill assessment use cases. 
+
+Key Objectives: 
+    Perform human pose estimation from video 
+    Analyze joint angles and motion patterns 
+    Compare movements against reference actions 
+    Provide quantitative and visual feedback 
+
+Datasets / Resources 
+Resource Link:
+    UCF101 Action Recognition Dataset https://www.crcv.ucf.edu/data/UCF101.php 
+    
+Expected Output:
+    Annotated video output with pose overlay 
+    Skill score or performance metrics 
+    Visual and textual feedback
+
+
+---------------------------------------------------------------------
+
+🚀 1. What you are REALLY building (simplified)
+
+At its core, your system =
+
+👉 Video → Pose → Features → Comparison → Feedback
+
+Think of it like:
+
+Input Video
+   ↓
+Pose Estimation (get skeleton)
+   ↓
+Extract joint angles + motion
+   ↓
+Compare with ideal/reference
+   ↓
+Score + feedback
+   ↓
+Output annotated video
+
+
+🧠 2. System Architecture
+
+🔹 Step 1: Input
+Webcam OR recorded video
+Dataset (like UCF101 for testing)
+🔹 Step 2: Pose Estimation (MOST IMPORTANT)
+
+Use:
+
+✅ MediaPipe (FAST + easy + perfect for hackathon)
+OR OpenPose (heavy, avoid unless needed)
+
+👉 Output:
+
+33 body landmarks (x, y, z)
+🔹 Step 3: Feature Extraction
+
+From pose points, compute:
+
+Joint angles (VERY important)
+Velocity (movement speed)
+Symmetry (left vs right body)
+
+Example:
+
+def calculate_angle(a, b, c):
+    # angle at point b
+
+🔹 Step 4: Action Recognition (2 approaches)
+
+✅ EASY (recommended for hackathon)
+Use rule-based comparison
+Example:
+Squat → knee angle < 90°
+Arm raise → shoulder angle > 150°
+
+🔥 ADVANCED (if time permits)
+Train ML model:
+LSTM / GRU on pose sequences
+OR use pre-trained model on UCF101
+
+🔹 Step 5: Comparison with Reference
+
+Store a perfect movement template:
+
+{
+  "squat": {
+    "knee_angle": [70, 100],
+    "back_angle": [160, 180]
+  }
+}
+
+Then compare:
+
+if user_angle not in range:
+    error = "Knees not bent enough"
+🔹 Step 6: Feedback System
+
+Generate:
+
+📊 Score (0–100)
+❌ Mistakes
+✅ Suggestions
+
+Example:
+
+Score: 72/100
+- Bend your knees more
+- Keep your back straight
+🔹 Step 7: Output Video
+
+Use OpenCV:
+
+Draw skeleton
+Display angles
+Show feedback text
+
+
+🛠️ 3. Tech Stack (Keep it SIMPLE)
+🔹 Core Libraries
+opencv-python
+mediapipe
+numpy
+🔹 Optional
+matplotlib (graphs)
+torch (if ML model)
+
+📦 4. Folder Structure
+
+project/
+│
+├── main.py
+├── pose_module.py
+├── angle_utils.py
+├── feedback.py
+├── reference_data.json
+├── videos/
+└── output/
+
+⚡ 5. Minimal Working Prototype (VERY IMPORTANT)
+
+Start with THIS:
+
+Step 1:
+
+✔ Detect pose
+✔ Draw skeleton
+
+Step 2:
+
+✔ Calculate 1–2 angles (e.g., elbow, knee)
+
+Step 3:
+
+✔ Print angle on screen
+
+Step 4:
+
+✔ Add simple rule:
+
+if angle < threshold → wrong posture
+
+🧪 6. Example Use Cases (choose ONE)
+
+Pick ONE for hackathon (don’t overdo):
+
+🏋️ Option 1: Gym Trainer (BEST)
+Squats
+Push-ups
+🏃 Option 2: Sports
+Cricket bowling
+Running posture
+🧍 Option 3: Rehab/Posture
+Sitting posture correction
+
+👉 Recommendation: Go with Squats or Push-ups
+
+📊 7. Evaluation Metrics
+
+You can show:
+
+Joint angle accuracy
+Repetition count
+Movement consistency
+Score %
