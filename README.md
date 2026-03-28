@@ -16,6 +16,7 @@ An intelligent fitness tracker powered by Computer Vision. This application uses
   - 🧎 Abdominal Crunches
 - **Dual Input Modes:** Works securely with both live Webcam streaming and pre-recorded Video Files.
 - **Form Feedback:** Displays real-time rep counts, current rep stage (e.g., "up" or "down"), form accuracy score, and live form-correction feedback on-screen.
+- **Audio Coaching:** Real-time audible announcements for exercises and form-checks.
 
 ---
 
@@ -41,6 +42,7 @@ Make sure your virtual environment is activated, then run the main detector scri
 - `q` : Quit the session
 - `r` : Reset current exercise counters
 - `p` : Pause (only when using a video file)
+- `m` : Mute/Unmute audio coaching
 
 ---
 
