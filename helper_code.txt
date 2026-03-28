@@ -22,3 +22,6 @@ Alternative (without activating): You can skip activation and run directly using
 
 powershell
 & .\.venv\Scripts\python.exe main.py
+
+
+.venv\Scripts\python.exe STORAGE\exercise_detector.py
