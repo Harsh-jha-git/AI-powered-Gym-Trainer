@@ -11,55 +11,136 @@ PL = mp_pose.PoseLandmark
 
 
 class CurlExercise(BaseExercise):
-    """Bicep Curl tracker — counts reps based on elbow angle."""
+    """Bicep Curl tracker — counts reps based on elbow angle with form checks."""
 
     NAME = "BICEP CURLS"
     COLOR = (0, 200, 255)  # Orange
 
-    def process(self, landmarks, frame):
-        # Get coordinates (left arm)
-        shoulder = get_coords(landmarks, PL.LEFT_SHOULDER)
-        elbow = get_coords(landmarks, PL.LEFT_ELBOW)
-        wrist = get_coords(landmarks, PL.LEFT_WRIST)
+    def __init__(self):
+        super().__init__()
+        # Track each arm independently
+        self.l_stage = None
+        self.r_stage = None
+        # Shoulder stability tracking
+        self._prev_l_shoulder_y = None
+        self._prev_r_shoulder_y = None
 
-        # Also check right arm
+    def reset(self):
+        super().reset()
+        self.l_stage = None
+        self.r_stage = None
+        self._prev_l_shoulder_y = None
+        self._prev_r_shoulder_y = None
+
+    def process(self, landmarks, frame):
+        # --- Get coordinates for both arms ---
+        l_shoulder = get_coords(landmarks, PL.LEFT_SHOULDER)
+        l_elbow = get_coords(landmarks, PL.LEFT_ELBOW)
+        l_wrist = get_coords(landmarks, PL.LEFT_WRIST)
+
         r_shoulder = get_coords(landmarks, PL.RIGHT_SHOULDER)
         r_elbow = get_coords(landmarks, PL.RIGHT_ELBOW)
         r_wrist = get_coords(landmarks, PL.RIGHT_WRIST)
 
-        l_angle = calculate_angle(shoulder, elbow, wrist)
+        # Hip for posture check
+        l_hip = get_coords(landmarks, PL.LEFT_HIP)
+        r_hip = get_coords(landmarks, PL.RIGHT_HIP)
+
+        # --- Calculate angles ---
+        l_angle = calculate_angle(l_shoulder, l_elbow, l_wrist)
         r_angle = calculate_angle(r_shoulder, r_elbow, r_wrist)
 
-        # Use the arm that's curling more (smaller angle = more curled)
+        # Shoulder-to-hip angle (torso lean check)
+        l_torso_angle = calculate_angle(l_elbow, l_shoulder, l_hip)
+        r_torso_angle = calculate_angle(r_elbow, r_shoulder, r_hip)
+
+        # --- Determine active arm (the one curling more) ---
         if r_angle < l_angle:
             angle = r_angle
             elbow_draw = r_elbow
+            active_arm = "right"
         else:
             angle = l_angle
-            elbow_draw = elbow
+            elbow_draw = l_elbow
+            active_arm = "left"
 
-        # Draw angle near elbow
-        elbow_pixel = tuple(np.multiply(elbow_draw, [frame.shape[1], frame.shape[0]]).astype(int))
+        # --- Draw angle near elbow ---
+        h, w = frame.shape[:2]
+        elbow_pixel = tuple(np.multiply(elbow_draw, [w, h]).astype(int))
         cv2.putText(frame, str(int(angle)), elbow_pixel,
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-        # Curl logic
-        if angle > 160:
-            self.stage = "DOWN"
-            self.feedback = "Lowered - Ready"
+        # Draw both arm angles (smaller text)
+        l_elbow_px = tuple(np.multiply(l_elbow, [w, h]).astype(int))
+        r_elbow_px = tuple(np.multiply(r_elbow, [w, h]).astype(int))
+        cv2.putText(frame, f"L:{int(l_angle)}", (l_elbow_px[0], l_elbow_px[1] + 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+        cv2.putText(frame, f"R:{int(r_angle)}", (r_elbow_px[0], r_elbow_px[1] + 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
-        if angle < 40 and self.stage == "DOWN":
-            self.stage = "UP"
+        # --- Rep counting with hysteresis ---
+        # LEFT ARM
+        if l_angle > 140:
+            self.l_stage = "DOWN"
+        if l_angle < 70 and self.l_stage == "DOWN":
+            self.l_stage = "UP"
             self.counter += 1
-            self.feedback = "Good Rep!"
+            self.feedback = "Good Rep! (Left)"
 
-        # Detailed feedback
-        if angle > 120:
-            self.feedback = "Lower your arm more"
-        elif angle < 30:
-            self.feedback = "Perfect contraction!"
+        # RIGHT ARM
+        if r_angle > 140:
+            self.r_stage = "DOWN"
+        if r_angle < 70 and self.r_stage == "DOWN":
+            self.r_stage = "UP"
+            self.counter += 1
+            self.feedback = "Good Rep! (Right)"
 
-        # Score (ideal curl ~ 30°)
+        # Update combined stage display
+        if active_arm == "left":
+            self.stage = self.l_stage
+        else:
+            self.stage = self.r_stage
+
+        # --- Form feedback ---
+        # Shoulder stability: shoulder shouldn't move much during a curl
+        shoulder_moving = False
+        active_shoulder_y = l_shoulder[1] if active_arm == "left" else r_shoulder[1]
+        prev_y = self._prev_l_shoulder_y if active_arm == "left" else self._prev_r_shoulder_y
+
+        if prev_y is not None:
+            shoulder_delta = abs(active_shoulder_y - prev_y)
+            if shoulder_delta > 0.015:
+                shoulder_moving = True
+                self.feedback = "Keep shoulders still!"
+
+        # Update previous shoulder positions
+        self._prev_l_shoulder_y = l_shoulder[1]
+        self._prev_r_shoulder_y = r_shoulder[1]
+
+        # Torso lean check
+        active_torso = l_torso_angle if active_arm == "left" else r_torso_angle
+        if active_torso > 50:
+            self.feedback = "Don't swing - keep elbows tucked!"
+
+        # Angle-based feedback (only if form is OK)
+        if not shoulder_moving and active_torso <= 50:
+            if angle < 30:
+                self.feedback = "Perfect contraction!"
+            elif angle > 120 and self.stage == "DOWN":
+                self.feedback = "Curl up higher!"
+            elif 50 <= angle <= 80:
+                self.feedback = "Keep going!"
+            elif angle > 150:
+                self.feedback = "Fully extended - Ready"
+
+        # --- Score (ideal curl ~ 30°) ---
         self.score = max(0, 100 - abs(angle - 30))
 
+        # Penalize bad form
+        if shoulder_moving:
+            self.score = max(0, self.score - 20)
+        if active_torso > 50:
+            self.score = max(0, self.score - 15)
+
         return frame
+

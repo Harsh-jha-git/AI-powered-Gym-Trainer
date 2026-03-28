@@ -85,12 +85,19 @@ def select_input_source():
     if choice == '1':
         # Webcam
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+        
+        # Try to set an extremely high resolution to force the camera to its maximum
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+        
+        # Read back what actually was set (the max supported resolution)
+        actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         source_desc = "Webcam"
         video_fps = 0  # not used for webcam
         use_mirror = True
-        print(f"\n  >> Using webcam (max resolution)")
+        print(f"\n  >> Detected Max Resolution: {actual_w}x{actual_h}")
     else:
         # Video file — open file picker dialog
         print("\n  >> Opening file picker...")
@@ -132,29 +139,6 @@ def select_input_source():
 
     return cap, source_desc, use_mirror if choice == '1' else False
 
-
-def select_voice():
-    """
-    Ask user to select voice gender for audio coaching.
-    Returns: voice gender string ('male' or 'female')
-    """
-    print()
-    print("  Select coaching voice:")
-    print("    [1] Male voice")
-    print("    [2] Female voice")
-    print()
-
-    while True:
-        choice = input("  Enter choice (1 or 2): ").strip()
-        if choice in ('1', '2'):
-            break
-        print("  Invalid choice. Please enter 1 or 2.")
-
-    gender = 'male' if choice == '1' else 'female'
-    print(f"  >> Voice: {gender.capitalize()}")
-    return gender
-
-
 cap, source_desc, use_mirror = select_input_source()
 
 username = input("\n  Enter your Username (for leaderboard): ").strip()
@@ -162,8 +146,7 @@ username = input("\n  Enter your Username (for leaderboard): ").strip()
 # -----------------------------------------
 # Audio Coach Setup
 # -----------------------------------------
-voice_gender = select_voice()
-audio_mgr = AudioManager(voice_gender=voice_gender)
+audio_mgr = AudioManager(voice_gender='female')
 
 # Display size
 DISPLAY_W, DISPLAY_H = 1280, 720
@@ -188,12 +171,12 @@ current_exercise = None
 current_exercise_key = None
 
 # Detection buffer — need N consistent detections before switching
-DETECTION_BUFFER_SIZE = 25
+DETECTION_BUFFER_SIZE = 15
 detection_history = deque(maxlen=DETECTION_BUFFER_SIZE)
 
 # Cooldown after switch (don't switch too fast)
 last_switch_time = 0
-SWITCH_COOLDOWN = 3.5  # seconds
+SWITCH_COOLDOWN = 2.0  # seconds
 
 # Video playback state
 paused = False
@@ -301,7 +284,7 @@ def classify_exercise(landmarks):
 print()
 print("  Starting exercise detection...")
 print(f"  Source: {source_desc}")
-print(f"  Voice: {voice_gender.capitalize()} | Audio: ON")
+print("  Voice: Female | Audio: ON")
 print("  Supported: Curls, Squats, Push-ups, Pull-ups, Plank, Crunches")
 print("  Press 'q' to quit  |  'r' reset  |  'm' mute/unmute  |  'p' pause (video)")
 print("=" * 50)
