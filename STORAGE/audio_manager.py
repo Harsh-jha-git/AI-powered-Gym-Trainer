@@ -27,15 +27,11 @@ class AudioManager:
     # Cooldown between any speech (seconds)
     MIN_SPEECH_GAP = 1.5
 
-    def __init__(self, voice_gender='female'):
+    def __init__(self):
         """
         Initialize the audio manager.
-
-        Args:
-            voice_gender: 'male' or 'female'
         """
         self.muted = False
-        self.voice_gender = voice_gender
 
         # Speech tracking
         self._last_spoken_text = ""
@@ -56,13 +52,20 @@ class AudioManager:
 
     def _tts_worker(self):
         """Background worker that processes speech requests sequentially."""
+        # In a background thread on Windows, we must initialize COM for OneCore voices
+        try:
+            import pythoncom
+            pythoncom.CoInitialize()
+        except ImportError:
+            pass
+            
         # pyttsx3 engine must be created in the same thread that uses it
         engine = pyttsx3.init()
         engine.setProperty('rate', 170)  # Slightly faster than default
         engine.setProperty('volume', 0.9)
 
-        # Set voice gender
-        self._set_voice_gender(engine, self.voice_gender)
+        # Set female voice
+        self._set_female_voice(engine)
 
         while True:
             try:
@@ -96,26 +99,50 @@ class AudioManager:
             except Exception:
                 pass
 
-    def _set_voice_gender(self, engine, gender):
-        """Set engine voice to male or female."""
+    def _set_female_voice(self, engine):
+        """Set engine voice to female, including OneCore voices."""
+        import winreg
+
+        # --- Step 1: Check standard SAPI voices (what pyttsx3 sees) ---
         voices = engine.getProperty('voices')
-        target = gender.lower()
-
         for voice in voices:
-            voice_name = voice.name.lower()
-            # Windows SAPI voices typically have 'david' (male) or 'zira' (female)
-            if target == 'female' and ('zira' in voice_name or 'female' in voice_name):
+            name = voice.name.lower()
+            if any(k in name for k in ['zira', 'heera', 'eva', 'hazel']):
                 engine.setProperty('voice', voice.id)
-                return
-            elif target == 'male' and ('david' in voice_name or 'male' in voice_name):
-                engine.setProperty('voice', voice.id)
+                print(f"    [Audio] Using voice: {voice.name}")
                 return
 
-        # Fallback: use first voice for male, second for female
-        if target == 'female' and len(voices) > 1:
-            engine.setProperty('voice', voices[1].id)
-        elif voices:
-            engine.setProperty('voice', voices[0].id)
+        # --- Step 2: Try to use OneCore voices directly ---
+        try:
+            onecore_key = r"SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens"
+
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, onecore_key) as oc:
+                i = 0
+                while True:
+                    try:
+                        token_name = winreg.EnumKey(oc, i)
+                        i += 1
+
+                        # Read the voice display name
+                        with winreg.OpenKey(oc, token_name) as token:
+                            display_name = winreg.QueryValueEx(token, "")[0].lower()
+
+                        # Check if this is the gender we want
+                        if any(k in display_name for k in ['heera', 'zira', 'eva', 'hazel']):
+                            # Set voice ID using OneCore path
+                            voice_id = f"HKEY_LOCAL_MACHINE\\{onecore_key}\\{token_name}"
+                            engine.setProperty('voice', voice_id)
+                            print(f"    [Audio] Using OneCore voice: {display_name.title()}")
+                            return
+
+                    except OSError:
+                        break
+        except Exception:
+            pass
+
+        # --- Step 3: Fallback ---
+        engine.setProperty('rate', 175)
+        print("    [Audio] Using default voice")
 
     def speak_feedback(self, text):
         """
@@ -180,7 +207,8 @@ class AudioManager:
             self._speech_queue.put(f"Detected: {exercise_name}")
 
     def toggle_mute(self):
-        """Toggle mute state. Returns the new mute state."""
+        """Toggle mute state. ::
+        Returns the new mute state."""
         self.muted = not self.muted
         return self.muted
 
@@ -221,9 +249,9 @@ if __name__ == '__main__':
 
     # Test female voice
     print("  Testing FEMALE voice...")
-    mgr = AudioManager(voice_gender='female')
+    mgr = AudioManager()
     time.sleep(0.5)
-    mgr.speak_feedback("Testing female voice. Keep your back straight!")
+    mgr.speak_feedback("Testing female voice. Push through the pain!")
     time.sleep(3)
 
     # Test ding sound

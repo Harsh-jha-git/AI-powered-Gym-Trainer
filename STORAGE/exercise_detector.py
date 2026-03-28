@@ -139,29 +139,6 @@ def select_input_source():
 
     return cap, source_desc, use_mirror if choice == '1' else False
 
-
-def select_voice():
-    """
-    Ask user to select voice gender for audio coaching.
-    Returns: voice gender string ('male' or 'female')
-    """
-    print()
-    print("  Select coaching voice:")
-    print("    [1] Male voice")
-    print("    [2] Female voice")
-    print()
-
-    while True:
-        choice = input("  Enter choice (1 or 2): ").strip()
-        if choice in ('1', '2'):
-            break
-        print("  Invalid choice. Please enter 1 or 2.")
-
-    gender = 'male' if choice == '1' else 'female'
-    print(f"  >> Voice: {gender.capitalize()}")
-    return gender
-
-
 cap, source_desc, use_mirror = select_input_source()
 
 username = input("\n  Enter your Username (for leaderboard): ").strip()
@@ -169,8 +146,7 @@ username = input("\n  Enter your Username (for leaderboard): ").strip()
 # -----------------------------------------
 # Audio Coach Setup
 # -----------------------------------------
-voice_gender = select_voice()
-audio_mgr = AudioManager(voice_gender=voice_gender)
+audio_mgr = AudioManager(voice_gender='female')
 
 # Display size
 DISPLAY_W, DISPLAY_H = 1280, 720
@@ -195,12 +171,13 @@ current_exercise = None
 current_exercise_key = None
 
 # Detection buffer — need N consistent detections before switching
-DETECTION_BUFFER_SIZE = 15
+# At ~30 FPS, 45 frames ≈ 1.5 seconds of consistent detection needed
+DETECTION_BUFFER_SIZE = 45
 detection_history = deque(maxlen=DETECTION_BUFFER_SIZE)
 
 # Cooldown after switch (don't switch too fast)
 last_switch_time = 0
-SWITCH_COOLDOWN = 2.0  # seconds
+SWITCH_COOLDOWN = 3.0  # seconds — minimum wait between exercise switches
 
 # Video playback state
 paused = False
@@ -306,7 +283,7 @@ def classify_exercise(landmarks):
 print()
 print("  Starting exercise detection...")
 print(f"  Source: {source_desc}")
-print(f"  Voice: {voice_gender.capitalize()} | Audio: ON")
+print("  Voice: Female | Audio: ON")
 print("  Supported: Curls, Squats, Push-ups, Pull-ups, Plank, Crunches")
 print("  Press 'q' to quit  |  'r' reset  |  'm' mute/unmute  |  'p' pause (video)")
 print("=" * 50)
@@ -362,7 +339,7 @@ while True:
                 most_common, count = counts.most_common(1)[0]
 
                 if (most_common is not None
-                        and count >= DETECTION_BUFFER_SIZE * 0.7
+                        and count >= DETECTION_BUFFER_SIZE * 0.8
                         and most_common != current_exercise_key
                         and (current_time - last_switch_time) > SWITCH_COOLDOWN):
 
