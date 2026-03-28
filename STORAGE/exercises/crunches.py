@@ -52,10 +52,10 @@ class CrunchExercise(BaseExercise):
             self.stage = "UP"
             self.counter += 1
             self.num_reps_rated += 1
-            # Calculate rep quality (0-10)
-            rep_quality = max(0, 10 - abs(crunch_angle - 100) / 10)
-            self.total_quality += rep_quality
-            self.score = self.total_quality / self.num_reps_rated
+            # Calculate rep quality (0.0-1.0)
+            # More generous baseline
+            rep_quality = max(0.5, 1.0 - abs(crunch_angle - 100) / 100)
+            self.score += rep_quality
             self.feedback = "Good Rep!"
 
         # Detailed feedback

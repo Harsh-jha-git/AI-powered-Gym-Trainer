@@ -54,25 +54,24 @@ class PlankExercise(TimedExercise):
                 frame_quality = 10
             elif body_angle > 160:
                 self.feedback = "Good form - stay tight!"
-                frame_quality = 8
+                frame_quality = 8.5
             else:
                 self.feedback = "Straighten your body!"
-                frame_quality = 6
+                frame_quality = 7.0
 
             # Hip sag detection
             if l_hip[1] > l_shoulder[1] + 0.05 and l_hip[1] > l_ankle[1]:
                 self.feedback = "Hips sagging - lift up!"
-                frame_quality = max(0, frame_quality - 4)
+                frame_quality = max(5.0, frame_quality - 2.0)
 
             # Hip pike detection
             if l_hip[1] < l_shoulder[1] - 0.05:
                 self.feedback = "Hips too high - lower them!"
-                frame_quality = max(0, frame_quality - 4)
+                frame_quality = max(5.0, frame_quality - 2.0)
 
-            # Accumulate quality and average it
-            self.total_quality += frame_quality
-            self.num_reps_rated += 1  # Using this as a 'frames rated' counter
-            self.score = self.total_quality / self.num_reps_rated
+            # Accumulate quality (1.0 points per second of perfect hold)
+            # Assuming ~30 FPS, each frame contributes a fraction
+            self.score += (frame_quality / 10.0) / 30.0
 
         else:
             # Not in plank

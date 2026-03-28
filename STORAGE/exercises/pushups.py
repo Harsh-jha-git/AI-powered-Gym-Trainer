@@ -49,11 +49,11 @@ class PushupExercise(BaseExercise):
             self.stage = "DOWN"
             self.counter += 1
             self.num_reps_rated += 1
-            # Calculate rep quality (0-10)
-            rep_quality = max(0, 10 - abs(arm_angle - 80) / 10)
-            if body_angle < 150 or body_angle > 175: rep_quality = max(0, rep_quality - 3)
-            self.total_quality += rep_quality
-            self.score = self.total_quality / self.num_reps_rated
+            # Calculate rep quality (0.0-1.0)
+            # More generous baseline
+            rep_quality = max(0.5, 1.0 - abs(arm_angle - 80) / 100)
+            if body_angle < 150 or body_angle > 175: rep_quality = max(0.3, rep_quality - 0.2)
+            self.score += rep_quality
             self.feedback = "Good Rep!"
 
         # Detailed feedback

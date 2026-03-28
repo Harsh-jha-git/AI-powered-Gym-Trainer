@@ -51,11 +51,11 @@ class PullupExercise(BaseExercise):
             self.stage = "UP"
             self.counter += 1
             self.num_reps_rated += 1
-            # Calculate rep quality (0-10)
-            rep_quality = max(0, 10 - abs(arm_angle - 60) / 10)
-            if chin_over: rep_quality = min(10.0, rep_quality + 2)
-            self.total_quality += rep_quality
-            self.score = self.total_quality / self.num_reps_rated
+            # Calculate rep quality (0.0-1.0)
+            # More generous baseline
+            rep_quality = max(0.5, 1.0 - abs(arm_angle - 60) / 100)
+            if chin_over: rep_quality = min(1.0, rep_quality + 0.3)
+            self.score += rep_quality
             self.feedback = "Good Rep!"
 
         # Detailed feedback

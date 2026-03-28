@@ -87,7 +87,7 @@ class BaseExercise(ABC):
         cv2.putText(frame, f'Stage: {self.stage or "—"}', (220, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
-        cv2.putText(frame, f'Score: {self.score:.1f}/10', (10, 100),
+        cv2.putText(frame, f'Score: {self.score:.1f}', (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
 
         # Audio status indicator
@@ -133,7 +133,7 @@ class TimedExercise(BaseExercise):
         cv2.putText(frame, f'Hold: {int(self.hold_duration)}s', (10, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-        cv2.putText(frame, f'Score: {self.score:.1f}/10', (220, 65),
+        cv2.putText(frame, f'Score: {self.score:.1f}', (220, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
 
         # Audio status indicator

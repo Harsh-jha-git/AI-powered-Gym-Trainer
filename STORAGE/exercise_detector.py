@@ -45,7 +45,7 @@ from exercises import (
     PlankExercise,
     CrunchExercise,
 )
-from ai_coach import AICoach
+# --- AI Coach removed ---
 
 # -----------------------------------------
 # MediaPipe Setup
@@ -160,8 +160,7 @@ cap, source_desc, use_mirror = select_input_source()
 
 username = input("\n  Enter your Username (for leaderboard): ").strip()
 
-gemini_key = input("  Enter your Gemini API Key (or press enter to skip AI coaching): ").strip()
-ai_coach = AICoach(gemini_key) if gemini_key else None
+ai_coach = None
 
 # -----------------------------------------
 # Audio Coach Setup
@@ -367,23 +366,24 @@ while True:
 
                 if (most_common is not None
                         and count >= DETECTION_BUFFER_SIZE * 0.8
-                        and most_common != current_exercise_key
                         and (current_time - last_switch_time) > SWITCH_COOLDOWN):
+                    
+                    # Only switch/reset if it's a NEW exercise
+                    if most_common != current_exercise_key:
+                        # Save previous session
+                        if current_exercise and getattr(current_exercise, 'counter', 0) > 0:
+                            session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
+                            
+                        current_exercise_key = most_common
+                        current_exercise = exercises[current_exercise_key]
+                        current_exercise.reset()
+                        last_switch_time = current_time
+                        detection_history.clear()
+                        print(f"  >> Detected: {current_exercise.NAME}")
 
-                    # Switch exercise!
-                    if current_exercise and getattr(current_exercise, 'counter', 0) > 0:
-                        session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
-                        
-                    current_exercise_key = most_common
-                    current_exercise = exercises[current_exercise_key]
-                    current_exercise.reset()
-                    last_switch_time = current_time
-                    detection_history.clear()
-                    print(f"  >> Detected: {current_exercise.NAME}")
-
-                    # Audio: announce the new exercise
-                    audio_mgr.play_exercise_switch_sound()
-                    audio_mgr.announce_exercise(current_exercise.NAME)
+                        # Audio: announce the new exercise
+                        audio_mgr.play_exercise_switch_sound()
+                        audio_mgr.announce_exercise(current_exercise.NAME)
 
             # --- Run active exercise tracker ---
             if current_exercise is not None:
@@ -394,23 +394,7 @@ while True:
                 except Exception:
                     pass
 
-            # --- Periodic AI Coaching ---
-            if ai_coach and (current_time - last_ai_tip_time) > AI_TIP_INTERVAL:
-                if current_exercise:
-                    metrics = {
-                        'exercise': current_exercise.NAME,
-                        'count': getattr(current_exercise, 'counter', 0) if current_exercise_key != 'plank' else getattr(current_exercise, 'hold_duration', 0),
-                        'score': current_exercise.score,
-                        'feedback': current_exercise.feedback
-                    }
-                    
-                    def speak_ai_tip(tip):
-                        global current_ai_tip
-                        current_ai_tip = tip
-                        audio_mgr.speak_feedback(f"AI Tip: {tip}")
-                        
-                    ai_coach.get_coaching_tip_async(metrics, speak_ai_tip)
-                    last_ai_tip_time = current_time
+            # --- Periodic AI Coaching removed ---
 
         # --- Status bars ---
         h, w = frame.shape[:2]
@@ -445,11 +429,7 @@ while True:
         cv2.putText(frame, f"FPS: {int(fps)}", (w - 150, h - 18),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1)
 
-        # AI Coaching tooltip (above bottom bar)
-        if ai_coach:
-            cv2.rectangle(frame, (0, h - 85), (w, h - 50), (40, 40, 40), -1)
-            cv2.putText(frame, f"AI COACH: {current_ai_tip}", (10, h - 62),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+        # --- AI Coaching tooltip removed ---
 
         # Controls hint
         controls = "Q: Quit | R: Reset | M: Mute | P: Pause" if source_desc != "Webcam" else "Q: Quit | R: Reset | M: Mute"
