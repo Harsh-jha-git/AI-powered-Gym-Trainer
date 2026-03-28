@@ -27,6 +27,7 @@ import numpy as np
 import sys
 import os
 import time
+import traceback
 import tkinter as tk
 from tkinter import filedialog
 from collections import deque
@@ -183,9 +184,13 @@ exercises = {
     'crunches': CrunchExercise(),
 }
 
-# Attach audio manager to all exercises
+# Attach audio manager and real-time logger to all exercises
+def real_time_logger(ex_name, val, score):
+    session_tracker.log_session(username, ex_name, val, score)
+
 for ex in exercises.values():
     ex.set_audio_manager(audio_mgr)
+    ex.log_callback = real_time_logger
 
 current_exercise = None
 current_exercise_key = None
@@ -368,15 +373,12 @@ while True:
                         and count >= DETECTION_BUFFER_SIZE * 0.8
                         and (current_time - last_switch_time) > SWITCH_COOLDOWN):
                     
-                    # Only switch/reset if it's a NEW exercise
+                    # Only switch if it's a NEW exercise
                     if most_common != current_exercise_key:
-                        # Save previous session
-                        if current_exercise and getattr(current_exercise, 'counter', 0) > 0:
-                            session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
-                            
                         current_exercise_key = most_common
                         current_exercise = exercises[current_exercise_key]
-                        current_exercise.reset()
+                        # Don't reset score/counter on auto-switch!
+                        current_exercise.reset(hard_reset=False)
                         last_switch_time = current_time
                         detection_history.clear()
                         print(f"  >> Detected: {current_exercise.NAME}")
@@ -391,8 +393,9 @@ while True:
                     frame = current_exercise.process(landmarks, frame)
                     current_exercise._trigger_audio()  # Audio coaching
                     frame = current_exercise.draw_ui(frame)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"\n  [ERROR] in {current_exercise_key} process: {e}")
+                    traceback.print_exc()
 
             # --- Periodic AI Coaching removed ---
 
@@ -460,8 +463,8 @@ while True:
         if current_exercise:
             if getattr(current_exercise, 'counter', 0) > 0:
                 session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
-            current_exercise.reset()
-            print("  >> Counters reset!")
+            current_exercise.reset(hard_reset=True)
+            print("  >> Counters and Score reset!")
     elif key == ord('m'):
         muted = audio_mgr.toggle_mute()
         state = 'MUTED' if muted else 'UNMUTED'

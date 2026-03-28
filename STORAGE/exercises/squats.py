@@ -18,15 +18,16 @@ class SquatExercise(BaseExercise):
 
     def process(self, landmarks, frame):
         # Left leg
+        # Get key points for both legs
         l_hip = get_coords(landmarks, PL.LEFT_HIP)
         l_knee = get_coords(landmarks, PL.LEFT_KNEE)
         l_ankle = get_coords(landmarks, PL.LEFT_ANKLE)
-
-        # Right leg
+        
         r_hip = get_coords(landmarks, PL.RIGHT_HIP)
         r_knee = get_coords(landmarks, PL.RIGHT_KNEE)
         r_ankle = get_coords(landmarks, PL.RIGHT_ANKLE)
 
+        # Calculate angles
         l_angle = calculate_angle(l_hip, l_knee, l_ankle)
         r_angle = calculate_angle(r_hip, r_knee, r_ankle)
 

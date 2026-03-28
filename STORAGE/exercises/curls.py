@@ -25,8 +25,8 @@ class CurlExercise(BaseExercise):
         self._prev_l_shoulder_y = None
         self._prev_r_shoulder_y = None
 
-    def reset(self):
-        super().reset()
+    def reset(self, hard_reset=False):
+        super().reset(hard_reset)
         self.l_stage = None
         self.r_stage = None
         self._prev_l_shoulder_y = None
@@ -42,18 +42,19 @@ class CurlExercise(BaseExercise):
         r_elbow = get_coords(landmarks, PL.RIGHT_ELBOW)
         r_wrist = get_coords(landmarks, PL.RIGHT_WRIST)
 
-        # Hip for posture check
         l_hip = get_coords(landmarks, PL.LEFT_HIP)
+        l_ankle = get_coords(landmarks, PL.LEFT_ANKLE)
         r_hip = get_coords(landmarks, PL.RIGHT_HIP)
+        r_ankle = get_coords(landmarks, PL.RIGHT_ANKLE)
 
         # --- Calculate angles ---
         l_angle = calculate_angle(l_shoulder, l_elbow, l_wrist)
         r_angle = calculate_angle(r_shoulder, r_elbow, r_wrist)
 
-        # Shoulder-to-hip angle (torso lean check)
-        l_torso_angle = calculate_angle(l_elbow, l_shoulder, l_hip)
-        r_torso_angle = calculate_angle(r_elbow, r_shoulder, r_hip)
-
+        # Torso lean check (relative to vertical)
+        l_torso_angle = calculate_angle(l_shoulder, l_hip, l_ankle)
+        r_torso_angle = calculate_angle(r_shoulder, r_hip, r_ankle)
+        
         # --- Determine active arm (the one curling more) ---
         if r_angle < l_angle:
             angle = r_angle
@@ -77,6 +78,27 @@ class CurlExercise(BaseExercise):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
         cv2.putText(frame, f"R:{int(r_angle)}", (r_elbow_px[0], r_elbow_px[1] + 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+        # --- Form checks (moved to top to avoid UnboundLocalError) ---
+        # Shoulder stability: shoulder shouldn't move much during a curl
+        shoulder_moving = False
+        active_shoulder_y = l_shoulder[1] if active_arm == "left" else r_shoulder[1]
+        prev_y = self._prev_l_shoulder_y if active_arm == "left" else self._prev_r_shoulder_y
+
+        if prev_y is not None:
+            shoulder_delta = abs(active_shoulder_y - prev_y)
+            if shoulder_delta > 0.015:
+                shoulder_moving = True
+                self.feedback = "Keep shoulders still!"
+
+        # Update previous shoulder positions
+        self._prev_l_shoulder_y = l_shoulder[1]
+        self._prev_r_shoulder_y = r_shoulder[1]
+
+        # Torso lean check (already calculated at top)
+        active_torso = l_torso_angle if active_arm == "left" else r_torso_angle
+        if active_torso > 50:
+            self.feedback = "Don't swing - keep elbows tucked!"
 
         # --- Rep counting with hysteresis ---
         # LEFT ARM
@@ -117,26 +139,16 @@ class CurlExercise(BaseExercise):
         else:
             self.stage = self.r_stage
 
-        # --- Form feedback ---
-        # Shoulder stability: shoulder shouldn't move much during a curl
-        shoulder_moving = False
-        active_shoulder_y = l_shoulder[1] if active_arm == "left" else r_shoulder[1]
-        prev_y = self._prev_l_shoulder_y if active_arm == "left" else self._prev_r_shoulder_y
-
-        if prev_y is not None:
-            shoulder_delta = abs(active_shoulder_y - prev_y)
-            if shoulder_delta > 0.015:
-                shoulder_moving = True
-                self.feedback = "Keep shoulders still!"
-
-        # Update previous shoulder positions
-        self._prev_l_shoulder_y = l_shoulder[1]
-        self._prev_r_shoulder_y = r_shoulder[1]
-
-        # Torso lean check
-        active_torso = l_torso_angle if active_arm == "left" else r_torso_angle
-        if active_torso > 50:
-            self.feedback = "Don't swing - keep elbows tucked!"
+        # Angle-based feedback (only if form is OK)
+        if not shoulder_moving and active_torso <= 50:
+            if angle < 30:
+                self.feedback = "Perfect contraction!"
+            elif angle > 120 and self.stage == "DOWN":
+                self.feedback = "Curl up higher!"
+            elif 50 <= angle <= 80:
+                self.feedback = "Keep going!"
+            elif angle > 150:
+                self.feedback = "Fully extended - Ready"
 
         # Angle-based feedback (only if form is OK)
         if not shoulder_moving and active_torso <= 50:

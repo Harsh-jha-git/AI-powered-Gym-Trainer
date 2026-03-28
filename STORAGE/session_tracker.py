@@ -42,8 +42,8 @@ def print_leaderboard():
         print("\n  [!] No workout history found for the Leaderboard yet. Get moving!")
         return
 
-    # Dictionary: { "Push-ups": { "Username": max_reps } }
-    exercise_records = defaultdict(lambda: defaultdict(float))
+    # Dictionary: { "Push-ups": { "Username": (max_reps, max_score) } }
+    exercise_records = defaultdict(lambda: defaultdict(lambda: (0, 0)))
     
     try:
         with open(CSV_FILE_PATH, mode='r') as file:
@@ -51,11 +51,15 @@ def print_leaderboard():
             for row in reader:
                 username = row.get("Username", "Unknown")
                 exercise = row.get("Exercise", "Unknown")
-                value = float(row.get("Reps/Seconds", 0))
+                try:
+                    reps = float(row.get("Reps/Seconds", 0))
+                    score = float(row.get("Score", 0))
+                except ValueError:
+                    continue
                 
-                # Keep only the highest reps/duration per user per exercise
-                if value > exercise_records[exercise][username]:
-                    exercise_records[exercise][username] = value
+                # Keep only the highest Score per user per exercise
+                if score > exercise_records[exercise][username][1]:
+                    exercise_records[exercise][username] = (reps, score)
                     
         # Print Leaderboard
         print("\n" + "="*50)
@@ -65,13 +69,14 @@ def print_leaderboard():
         if not exercise_records:
             print("  No entries found.")
         
-        for exercise, user_scores in exercise_records.items():
+        for exercise, user_data in exercise_records.items():
             print(f"\n  -- {exercise} --")
-            # Sort by highest value
-            sorted_users = sorted(user_scores.items(), key=lambda item: item[1], reverse=True)
-            for rank, (user, val) in enumerate(sorted_users, 1):
+            # Sort by highest Score
+            sorted_users = sorted(user_data.items(), key=lambda item: item[1][1], reverse=True)
+            for rank, (user, (reps, score)) in enumerate(sorted_users, 1):
                 suffix = "s" if "Plank" in exercise else "reps" # Quick guess based on name
-                print(f"    {rank}. {user.ljust(15)} : {val} {suffix}")
+                score_str = f"({score:.1f} pts)"
+                print(f"    {rank}. {user.ljust(15)} : {str(reps).rjust(5)} {suffix.ljust(5)} {score_str}")
                 
         print("\n" + "="*50 + "\n")
         

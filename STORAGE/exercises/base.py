@@ -18,19 +18,24 @@ class BaseExercise(ABC):
         self.num_reps_rated = 0
         self._audio_manager = None
         self._prev_feedback = ""
+        self.log_callback = None
+        self.last_logged_count = 0
 
     def set_audio_manager(self, audio_manager):
         """Attach an AudioManager for voice coaching."""
         self._audio_manager = audio_manager
 
-    def reset(self):
-        """Reset all tracking state."""
-        self.counter = 0
+    def reset(self, hard_reset=False):
+        """Reset tracking state. Hard reset clears everything."""
+        if hard_reset:
+            self.counter = 0
+            self.score = 0.0
+            self.num_reps_rated = 0
+            self.last_logged_count = 0
+            self.total_quality = 0.0
+            
         self.stage = None
         self.feedback = ""
-        self.score = 0.0
-        self.total_quality = 0.0
-        self.num_reps_rated = 0
         self._prev_feedback = ""
         if self._audio_manager:
             self._audio_manager.reset_tracking(self.NAME)
@@ -50,6 +55,11 @@ class BaseExercise(ABC):
         if self.feedback and self.feedback != self._prev_feedback:
             self._audio_manager.speak_feedback(self.feedback)
             self._prev_feedback = self.feedback
+            
+        # Trigger real-time log callback if reps increased
+        if self.log_callback and self.counter > self.last_logged_count:
+            self.log_callback(self.NAME, self.counter, self.score)
+            self.last_logged_count = self.counter
 
     @abstractmethod
     def process(self, landmarks, frame):
@@ -111,8 +121,18 @@ class TimedExercise(BaseExercise):
         self.hold_start = None
         self.hold_duration = 0
 
-    def reset(self):
-        super().reset()
+    def _trigger_audio(self):
+        """Override to log every second of hold duration."""
+        super()._trigger_audio()
+        
+        # Trigger real-time log callback if seconds increased (reusing last_logged_count)
+        secs = int(self.hold_duration or 0)
+        if self.log_callback and secs > self.last_logged_count:
+            self.log_callback(self.NAME, secs, self.score)
+            self.last_logged_count = secs
+
+    def reset(self, hard_reset=False):
+        super().reset(hard_reset)
         self.hold_start = None
         self.hold_duration = 0
 
