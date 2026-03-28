@@ -27,11 +27,15 @@ class AudioManager:
     # Cooldown between any speech (seconds)
     MIN_SPEECH_GAP = 1.5
 
-    def __init__(self):
+    def __init__(self, voice_gender='female'):
         """
         Initialize the audio manager.
+
+        Args:
+            voice_gender: 'male' or 'female'
         """
         self.muted = False
+        self.voice_gender = voice_gender
 
         # Speech tracking
         self._last_spoken_text = ""
@@ -64,8 +68,8 @@ class AudioManager:
         engine.setProperty('rate', 170)  # Slightly faster than default
         engine.setProperty('volume', 0.9)
 
-        # Set female voice
-        self._set_female_voice(engine)
+        # Set voice gender
+        self._set_voice_gender(engine, self.voice_gender)
 
         while True:
             try:
@@ -99,15 +103,21 @@ class AudioManager:
             except Exception:
                 pass
 
-    def _set_female_voice(self, engine):
-        """Set engine voice to female, including OneCore voices."""
+    def _set_voice_gender(self, engine, gender):
+        """Set engine voice to male or female, including OneCore voices."""
         import winreg
+
+        target = gender.lower()
 
         # --- Step 1: Check standard SAPI voices (what pyttsx3 sees) ---
         voices = engine.getProperty('voices')
         for voice in voices:
             name = voice.name.lower()
-            if any(k in name for k in ['zira', 'heera', 'eva', 'hazel']):
+            if target == 'male' and any(k in name for k in ['david', 'mark', 'ravi', 'james']):
+                engine.setProperty('voice', voice.id)
+                print(f"    [Audio] Using voice: {voice.name}")
+                return
+            elif target == 'female' and any(k in name for k in ['zira', 'heera', 'eva', 'hazel']):
                 engine.setProperty('voice', voice.id)
                 print(f"    [Audio] Using voice: {voice.name}")
                 return
@@ -128,7 +138,13 @@ class AudioManager:
                             display_name = winreg.QueryValueEx(token, "")[0].lower()
 
                         # Check if this is the gender we want
-                        if any(k in display_name for k in ['heera', 'zira', 'eva', 'hazel']):
+                        is_match = False
+                        if target == 'male' and any(k in display_name for k in ['ravi', 'david', 'mark', 'james']):
+                            is_match = True
+                        elif target == 'female' and any(k in display_name for k in ['heera', 'zira', 'eva', 'hazel']):
+                            is_match = True
+
+                        if is_match:
                             # Set voice ID using OneCore path
                             voice_id = f"HKEY_LOCAL_MACHINE\\{onecore_key}\\{token_name}"
                             engine.setProperty('voice', voice_id)
@@ -140,9 +156,13 @@ class AudioManager:
         except Exception:
             pass
 
-        # --- Step 3: Fallback ---
-        engine.setProperty('rate', 175)
-        print("    [Audio] Using default voice")
+        # --- Step 3: Fallback — adjust pitch if no matching voice found ---
+        if target == 'male':
+            engine.setProperty('rate', 155)
+            print("    [Audio] No male voice found - using lower pitch fallback")
+        else:
+            engine.setProperty('rate', 175)
+            print("    [Audio] Using default voice")
 
     def speak_feedback(self, text):
         """

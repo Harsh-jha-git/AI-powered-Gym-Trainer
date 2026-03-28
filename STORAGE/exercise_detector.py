@@ -139,6 +139,29 @@ def select_input_source():
 
     return cap, source_desc, use_mirror if choice == '1' else False
 
+
+def select_voice():
+    """
+    Ask user to select voice gender for audio coaching.
+    Returns: voice gender string ('male' or 'female')
+    """
+    print()
+    print("  Select coaching voice:")
+    print("    [1] Male voice")
+    print("    [2] Female voice")
+    print()
+
+    while True:
+        choice = input("  Enter choice (1 or 2): ").strip()
+        if choice in ('1', '2'):
+            break
+        print("  Invalid choice. Please enter 1 or 2.")
+
+    gender = 'male' if choice == '1' else 'female'
+    print(f"  >> Voice: {gender.capitalize()}")
+    return gender
+
+
 cap, source_desc, use_mirror = select_input_source()
 
 username = input("\n  Enter your Username (for leaderboard): ").strip()
@@ -146,7 +169,8 @@ username = input("\n  Enter your Username (for leaderboard): ").strip()
 # -----------------------------------------
 # Audio Coach Setup
 # -----------------------------------------
-audio_mgr = AudioManager()
+voice_gender = select_voice()
+audio_mgr = AudioManager(voice_gender=voice_gender)
 
 # Display size
 DISPLAY_W, DISPLAY_H = 1280, 720
@@ -283,7 +307,7 @@ def classify_exercise(landmarks):
 print()
 print("  Starting exercise detection...")
 print(f"  Source: {source_desc}")
-print("  Voice: Female | Audio: ON")
+print(f"  Voice: {voice_gender.capitalize()} | Audio: ON")
 print("  Supported: Curls, Squats, Push-ups, Pull-ups, Plank, Crunches")
 print("  Press 'q' to quit  |  'r' reset  |  'm' mute/unmute  |  'p' pause (video)")
 print("=" * 50)
