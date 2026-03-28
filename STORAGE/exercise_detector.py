@@ -34,6 +34,7 @@ from collections import deque
 # Add STORAGE to path so we can import angle_utils
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import session_tracker
 from angle_utils import calculate_angle, get_coords, body_orientation
 from audio_manager import AudioManager
 from exercises import (
@@ -155,6 +156,8 @@ def select_voice():
 
 
 cap, source_desc, use_mirror = select_input_source()
+
+username = input("\n  Enter your Username (for leaderboard): ").strip()
 
 # -----------------------------------------
 # Audio Coach Setup
@@ -357,6 +360,9 @@ while True:
                         and (current_time - last_switch_time) > SWITCH_COOLDOWN):
 
                     # Switch exercise!
+                    if current_exercise and getattr(current_exercise, 'counter', 0) > 0:
+                        session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
+                        
                     current_exercise_key = most_common
                     current_exercise = exercises[current_exercise_key]
                     current_exercise.reset()
@@ -437,6 +443,8 @@ while True:
         break
     elif key == ord('r'):
         if current_exercise:
+            if getattr(current_exercise, 'counter', 0) > 0:
+                session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
             current_exercise.reset()
             print("  >> Counters reset!")
     elif key == ord('m'):
@@ -448,7 +456,12 @@ while True:
         print(f"  >> {'Paused' if paused else 'Resumed'}")
 
 # Cleanup
+if current_exercise and getattr(current_exercise, 'counter', 0) > 0:
+    session_tracker.log_session(username, current_exercise.NAME, current_exercise.counter, current_exercise.score)
+
 audio_mgr.shutdown()
 cap.release()
 cv2.destroyAllWindows()
+
 print("\nSession ended. Great workout! 💪")
+session_tracker.print_leaderboard()
