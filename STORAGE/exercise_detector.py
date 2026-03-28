@@ -15,6 +15,7 @@ Supported exercises:
 Controls:
   q - Quit
   r - Reset counters for current exercise
+  m - Mute / Unmute audio coaching
 
 Usage:
   .venv\\Scripts\\python.exe STORAGE\\exercise_detector.py
@@ -34,6 +35,7 @@ from collections import deque
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from angle_utils import calculate_angle, get_coords, body_orientation
+from audio_manager import AudioManager
 from exercises import (
     CurlExercise,
     SquatExercise,
@@ -130,7 +132,35 @@ def select_input_source():
     return cap, source_desc, use_mirror if choice == '1' else False
 
 
+def select_voice():
+    """
+    Ask user to select voice gender for audio coaching.
+    Returns: voice gender string ('male' or 'female')
+    """
+    print()
+    print("  Select coaching voice:")
+    print("    [1] Male voice")
+    print("    [2] Female voice")
+    print()
+
+    while True:
+        choice = input("  Enter choice (1 or 2): ").strip()
+        if choice in ('1', '2'):
+            break
+        print("  Invalid choice. Please enter 1 or 2.")
+
+    gender = 'male' if choice == '1' else 'female'
+    print(f"  >> Voice: {gender.capitalize()}")
+    return gender
+
+
 cap, source_desc, use_mirror = select_input_source()
+
+# -----------------------------------------
+# Audio Coach Setup
+# -----------------------------------------
+voice_gender = select_voice()
+audio_mgr = AudioManager(voice_gender=voice_gender)
 
 # Display size
 DISPLAY_W, DISPLAY_H = 1280, 720
@@ -146,6 +176,10 @@ exercises = {
     'plank': PlankExercise(),
     'crunches': CrunchExercise(),
 }
+
+# Attach audio manager to all exercises
+for ex in exercises.values():
+    ex.set_audio_manager(audio_mgr)
 
 current_exercise = None
 current_exercise_key = None
@@ -262,8 +296,9 @@ def classify_exercise(landmarks):
 print()
 print("  Starting exercise detection...")
 print(f"  Source: {source_desc}")
+print(f"  Voice: {voice_gender.capitalize()} | Audio: ON")
 print("  Supported: Curls, Squats, Push-ups, Pull-ups, Plank, Crunches")
-print("  Press 'q' to quit  |  Press 'r' to reset  |  Press 'p' to pause (video)")
+print("  Press 'q' to quit  |  'r' reset  |  'm' mute/unmute  |  'p' pause (video)")
 print("=" * 50)
 
 fps_time = time.time()
@@ -329,10 +364,15 @@ while True:
                     detection_history.clear()
                     print(f"  >> Detected: {current_exercise.NAME}")
 
+                    # Audio: announce the new exercise
+                    audio_mgr.play_exercise_switch_sound()
+                    audio_mgr.announce_exercise(current_exercise.NAME)
+
             # --- Run active exercise tracker ---
             if current_exercise is not None:
                 try:
                     frame = current_exercise.process(landmarks, frame)
+                    current_exercise._trigger_audio()  # Audio coaching
                     frame = current_exercise.draw_ui(frame)
                 except Exception:
                     pass
@@ -371,8 +411,8 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1)
 
         # Controls hint
-        controls = "Q: Quit | R: Reset | P: Pause" if source_desc != "Webcam" else "Q: Quit | R: Reset"
-        cv2.putText(frame, controls, (w - 400, 30),
+        controls = "Q: Quit | R: Reset | M: Mute | P: Pause" if source_desc != "Webcam" else "Q: Quit | R: Reset | M: Mute"
+        cv2.putText(frame, controls, (w - 480, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 1)
 
         # Save last frame for paused display
@@ -399,11 +439,16 @@ while True:
         if current_exercise:
             current_exercise.reset()
             print("  >> Counters reset!")
+    elif key == ord('m'):
+        muted = audio_mgr.toggle_mute()
+        state = 'MUTED' if muted else 'UNMUTED'
+        print(f"  >> Audio: {state}")
     elif key == ord('p') and source_desc != "Webcam":
         paused = not paused
         print(f"  >> {'Paused' if paused else 'Resumed'}")
 
 # Cleanup
+audio_mgr.shutdown()
 cap.release()
 cv2.destroyAllWindows()
 print("\nSession ended. Great workout! 💪")

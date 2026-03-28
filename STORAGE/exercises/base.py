@@ -14,6 +14,12 @@ class BaseExercise(ABC):
         self.stage = None
         self.feedback = ""
         self.score = 0
+        self._audio_manager = None
+        self._prev_feedback = ""
+
+    def set_audio_manager(self, audio_manager):
+        """Attach an AudioManager for voice coaching."""
+        self._audio_manager = audio_manager
 
     def reset(self):
         """Reset all tracking state."""
@@ -21,6 +27,25 @@ class BaseExercise(ABC):
         self.stage = None
         self.feedback = ""
         self.score = 0
+        self._prev_feedback = ""
+        if self._audio_manager:
+            self._audio_manager.reset_tracking(self.NAME)
+
+    def _trigger_audio(self):
+        """
+        Called after process() to trigger audio feedback if something changed.
+        Automatically speaks new feedback and plays ding on new reps.
+        """
+        if not self._audio_manager:
+            return
+
+        # Play ding on new reps
+        self._audio_manager.play_rep_sound(self.NAME, self.counter)
+
+        # Speak feedback if it changed
+        if self.feedback and self.feedback != self._prev_feedback:
+            self._audio_manager.speak_feedback(self.feedback)
+            self._prev_feedback = self.feedback
 
     @abstractmethod
     def process(self, landmarks, frame):
@@ -61,6 +86,13 @@ class BaseExercise(ABC):
         cv2.putText(frame, f'Score: {int(self.score)}', (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
 
+        # Audio status indicator
+        if self._audio_manager:
+            mute_icon = "MUTED" if self._audio_manager.muted else "AUDIO ON"
+            mute_color = (0, 0, 200) if self._audio_manager.muted else (0, 200, 0)
+            cv2.putText(frame, mute_icon, (320, 100),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, mute_color, 1)
+
         cv2.putText(frame, f'{self.feedback}', (10, 140),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2)
 
@@ -99,6 +131,13 @@ class TimedExercise(BaseExercise):
 
         cv2.putText(frame, f'Score: {int(self.score)}', (220, 65),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
+
+        # Audio status indicator
+        if self._audio_manager:
+            mute_icon = "MUTED" if self._audio_manager.muted else "AUDIO ON"
+            mute_color = (0, 0, 200) if self._audio_manager.muted else (0, 200, 0)
+            cv2.putText(frame, mute_icon, (320, 65),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, mute_color, 1)
 
         cv2.putText(frame, f'{self.feedback}', (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2)
