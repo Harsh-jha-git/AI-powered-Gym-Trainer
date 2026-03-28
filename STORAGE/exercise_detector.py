@@ -85,19 +85,12 @@ def select_input_source():
     if choice == '1':
         # Webcam
         cap = cv2.VideoCapture(0)
-        
-        # Try to set an extremely high resolution to force the camera to its maximum
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
-        
-        # Read back what actually was set (the max supported resolution)
-        actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         source_desc = "Webcam"
         video_fps = 0  # not used for webcam
         use_mirror = True
-        print(f"\n  >> Detected Max Resolution: {actual_w}x{actual_h}")
+        print(f"\n  >> Using webcam (720p resolution)")
     else:
         # Video file — open file picker dialog
         print("\n  >> Opening file picker...")
@@ -195,13 +188,12 @@ current_exercise = None
 current_exercise_key = None
 
 # Detection buffer — need N consistent detections before switching
-# At ~30 FPS, 45 frames ≈ 1.5 seconds of consistent detection needed
-DETECTION_BUFFER_SIZE = 45
+DETECTION_BUFFER_SIZE = 15
 detection_history = deque(maxlen=DETECTION_BUFFER_SIZE)
 
 # Cooldown after switch (don't switch too fast)
 last_switch_time = 0
-SWITCH_COOLDOWN = 3.0  # seconds — minimum wait between exercise switches
+SWITCH_COOLDOWN = 2.0  # seconds
 
 # Video playback state
 paused = False
@@ -249,7 +241,9 @@ def classify_exercise(landmarks):
 
         # Wrist position relative to shoulder
         avg_wrist_y = (l_wrist[1] + r_wrist[1]) / 2
+        avg_elbow_y = (l_elbow[1] + r_elbow[1]) / 2
         wrists_above_shoulders = avg_wrist_y < avg_shoulder_y - 0.05
+        elbows_above_shoulders = avg_elbow_y < avg_shoulder_y - 0.03
 
         # Body angle (shoulder → hip → ankle)
         body_angle = calculate_angle(l_shoulder, l_hip, l_ankle)
@@ -265,8 +259,8 @@ def classify_exercise(landmarks):
 
         # --- Classification logic ---
 
-        # PULL-UPS: standing/hanging, wrists above shoulders
-        if wrists_above_shoulders and orientation == 'standing':
+        # PULL-UPS: standing/hanging, wrists AND elbows above shoulders (arms fully overhead)
+        if wrists_above_shoulders and elbows_above_shoulders and orientation == 'standing':
             return 'pullups'
 
         # PUSH-UPS: body horizontal, arms involved (not totally straight)
