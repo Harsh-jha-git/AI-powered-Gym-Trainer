@@ -61,112 +61,47 @@ pose = mp_pose.Pose(
 )
 
 
-# -----------------------------------------
-# Input Source Selection
-# -----------------------------------------
-def select_input_source():
-    """
-    Ask user whether to use webcam or a video file.
-    Returns: cv2.VideoCapture object and source description string.
-    """
-    print("=" * 50)
-    print("  AI Exercise Detector & Trainer")
-    print("=" * 50)
-    print()
-    print("  Select input source:")
-    print("    [1] Webcam (live camera feed)")
-    print("    [2] Video file (upload/select a video)")
-    print()
+import argparse
 
-    while True:
-        choice = input("  Enter choice (1 or 2): ").strip()
-        if choice in ('1', '2'):
-            break
-        print("  Invalid choice. Please enter 1 or 2.")
+# -----------------------------------------
+# Input Source Selection (via GUI or CLI)
+# -----------------------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument("--user", type=str, help="Username")
+parser.add_argument("--source", type=str, default="webcam", help="webcam or path to video")
+parser.add_argument("--voice", type=str, default="male", help="male or female")
+parser.add_argument("--no-gui", action="store_true", help="Launch without GUI")
+args, unknown = parser.parse_known_args()
 
-    if choice == '1':
-        # Webcam
+if args.no_gui and args.user:
+    username = args.user
+    voice_gender = args.voice
+    if args.source == "webcam":
         cap = cv2.VideoCapture(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         source_desc = "Webcam"
-        video_fps = 0  # not used for webcam
         use_mirror = True
-        print(f"\n  >> Using webcam (720p resolution)")
     else:
-        # Video file — open file picker dialog
-        print("\n  >> Opening file picker...")
-        root = tk.Tk()
-        root.withdraw()  # Hide the root window
-        root.attributes('-topmost', True)
-
-        video_path = filedialog.askopenfilename(
-            title="Select Exercise Video",
-            filetypes=[
-                ("Video files", "*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm"),
-                ("All files", "*.*"),
-            ]
-        )
-        root.destroy()
-
-        if not video_path:
-            print("  No file selected. Exiting.")
-            sys.exit(0)
-
-        if not os.path.exists(video_path):
-            print(f"  File not found: {video_path}")
-            sys.exit(1)
-
-        cap = cv2.VideoCapture(video_path)
-
+        import os
+        cap = cv2.VideoCapture(args.source)
         if not cap.isOpened():
-            print(f"  Could not open video: {video_path}")
             sys.exit(1)
-
-        source_desc = os.path.basename(video_path)
+        source_desc = os.path.basename(args.source)
         use_mirror = False
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        video_fps_val = cap.get(cv2.CAP_PROP_FPS)
-        duration = total_frames / video_fps_val if video_fps_val > 0 else 0
-        print(f"  >> Loaded: {source_desc}")
-        print(f"     Resolution: {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}")
-        print(f"     Duration: {int(duration)}s | FPS: {int(video_fps_val)} | Frames: {total_frames}")
-
-    return cap, source_desc, use_mirror if choice == '1' else False
-
-
-def select_voice():
-    """
-    Ask user to select voice gender for audio coaching.
-    Returns: voice gender string ('male' or 'female')
-    """
-    print()
-    print("  Select coaching voice:")
-    print("    [1] Male voice")
-    print("    [2] Female voice")
-    print()
-
-    while True:
-        choice = input("  Enter choice (1 or 2): ").strip()
-        if choice in ('1', '2'):
-            break
-        print("  Invalid choice. Please enter 1 or 2.")
-
-    gender = 'male' if choice == '1' else 'female'
-    print(f"  >> Voice: {gender.capitalize()}")
-    return gender
-
-
-cap, source_desc, use_mirror = select_input_source()
-
-username = input("\n  Enter your Username (for leaderboard): ").strip()
+else:
+    from gui_launcher import launch_setup_gui
+    try:
+        cap, source_desc, use_mirror, username, voice_gender = launch_setup_gui()
+    except Exception as e:
+        print(f"Error launching setup: {e}")
+        sys.exit(1)
 
 ai_coach = None
 
 # -----------------------------------------
 # Audio Coach Setup
 # -----------------------------------------
-voice_gender = select_voice()
 audio_mgr = AudioManager(voice_gender=voice_gender)
 
 # Display size

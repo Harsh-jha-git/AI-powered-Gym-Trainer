@@ -14,7 +14,17 @@ Features:
 import threading
 import queue
 import time
-import winsound
+import platform
+
+if platform.system() == "Windows":
+    import winsound
+else:
+    class winsound:
+        @staticmethod
+        def Beep(frequency, duration):
+            import os
+            # MacOS/Linux fallback
+            os.system('afplay /System/Library/Sounds/Ping.aiff &')
 import pyttsx3
 
 
@@ -105,8 +115,6 @@ class AudioManager:
 
     def _set_voice_gender(self, engine, gender):
         """Set engine voice to male or female, including OneCore voices."""
-        import winreg
-
         target = gender.lower()
 
         # --- Step 1: Check standard SAPI voices (what pyttsx3 sees) ---
@@ -122,39 +130,41 @@ class AudioManager:
                 print(f"    [Audio] Using voice: {voice.name}")
                 return
 
-        # --- Step 2: Try to use OneCore voices directly ---
-        try:
-            onecore_key = r"SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens"
+        # --- Step 2: Try to use OneCore voices directly (Windows Native Only) ---
+        if platform.system() == "Windows":
+            try:
+                import winreg
+                onecore_key = r"SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens"
 
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, onecore_key) as oc:
-                i = 0
-                while True:
-                    try:
-                        token_name = winreg.EnumKey(oc, i)
-                        i += 1
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, onecore_key) as oc:
+                    i = 0
+                    while True:
+                        try:
+                            token_name = winreg.EnumKey(oc, i)
+                            i += 1
 
-                        # Read the voice display name
-                        with winreg.OpenKey(oc, token_name) as token:
-                            display_name = winreg.QueryValueEx(token, "")[0].lower()
+                            # Read the voice display name
+                            with winreg.OpenKey(oc, token_name) as token:
+                                display_name = winreg.QueryValueEx(token, "")[0].lower()
 
-                        # Check if this is the gender we want
-                        is_match = False
-                        if target == 'male' and any(k in display_name for k in ['ravi', 'david', 'mark', 'james']):
-                            is_match = True
-                        elif target == 'female' and any(k in display_name for k in ['heera', 'zira', 'eva', 'hazel']):
-                            is_match = True
+                            # Check if this is the gender we want
+                            is_match = False
+                            if target == 'male' and any(k in display_name for k in ['ravi', 'david', 'mark', 'james']):
+                                is_match = True
+                            elif target == 'female' and any(k in display_name for k in ['heera', 'zira', 'eva', 'hazel']):
+                                is_match = True
 
-                        if is_match:
-                            # Set voice ID using OneCore path
-                            voice_id = f"HKEY_LOCAL_MACHINE\\{onecore_key}\\{token_name}"
-                            engine.setProperty('voice', voice_id)
-                            print(f"    [Audio] Using OneCore voice: {display_name.title()}")
-                            return
+                            if is_match:
+                                # Set voice ID using OneCore path
+                                voice_id = f"HKEY_LOCAL_MACHINE\\{onecore_key}\\{token_name}"
+                                engine.setProperty('voice', voice_id)
+                                print(f"    [Audio] Using OneCore voice: {display_name.title()}")
+                                return
 
-                    except OSError:
-                        break
-        except Exception:
-            pass
+                        except OSError:
+                            break
+            except Exception:
+                pass
 
         # --- Step 3: Fallback — adjust pitch if no matching voice found ---
         if target == 'male':

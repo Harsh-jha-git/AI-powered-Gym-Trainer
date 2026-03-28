@@ -2,8 +2,17 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-import winsound  # For alert sound (Windows)
+import platform
 
+if platform.system() == "Windows":
+    import winsound
+else:
+    class winsound:
+        @staticmethod
+        def Beep(frequency, duration):
+            import os
+            # Use afplay on macOS/Linux fallback
+            os.system('afplay /System/Library/Sounds/Ping.aiff &')
 # --------------------------
 # Angle Calculation
 # --------------------------
