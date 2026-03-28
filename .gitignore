@@ -34,3 +34,6 @@ Desktop.ini
 
 # Logs
 *.log
+
+# Exercise data (personal logs)
+STORAGE/workout_history.csv
