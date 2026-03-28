@@ -84,12 +84,19 @@ def select_input_source():
     if choice == '1':
         # Webcam
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+        
+        # Try to set an extremely high resolution to force the camera to its maximum
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+        
+        # Read back what actually was set (the max supported resolution)
+        actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         source_desc = "Webcam"
         video_fps = 0  # not used for webcam
         use_mirror = True
-        print(f"\n  >> Using webcam (max resolution)")
+        print(f"\n  >> Detected Max Resolution: {actual_w}x{actual_h}")
     else:
         # Video file — open file picker dialog
         print("\n  >> Opening file picker...")
