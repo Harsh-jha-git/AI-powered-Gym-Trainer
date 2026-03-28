@@ -188,12 +188,12 @@ current_exercise = None
 current_exercise_key = None
 
 # Detection buffer — need N consistent detections before switching
-DETECTION_BUFFER_SIZE = 15
+DETECTION_BUFFER_SIZE = 25
 detection_history = deque(maxlen=DETECTION_BUFFER_SIZE)
 
 # Cooldown after switch (don't switch too fast)
 last_switch_time = 0
-SWITCH_COOLDOWN = 2.0  # seconds
+SWITCH_COOLDOWN = 3.5  # seconds
 
 # Video playback state
 paused = False
@@ -241,7 +241,9 @@ def classify_exercise(landmarks):
 
         # Wrist position relative to shoulder
         avg_wrist_y = (l_wrist[1] + r_wrist[1]) / 2
+        avg_elbow_y = (l_elbow[1] + r_elbow[1]) / 2
         wrists_above_shoulders = avg_wrist_y < avg_shoulder_y - 0.05
+        elbows_above_shoulders = avg_elbow_y < avg_shoulder_y - 0.03
 
         # Body angle (shoulder → hip → ankle)
         body_angle = calculate_angle(l_shoulder, l_hip, l_ankle)
@@ -257,8 +259,8 @@ def classify_exercise(landmarks):
 
         # --- Classification logic ---
 
-        # PULL-UPS: standing/hanging, wrists above shoulders
-        if wrists_above_shoulders and orientation == 'standing':
+        # PULL-UPS: standing/hanging, wrists AND elbows above shoulders (arms fully overhead)
+        if wrists_above_shoulders and elbows_above_shoulders and orientation == 'standing':
             return 'pullups'
 
         # PUSH-UPS: body horizontal, arms involved (not totally straight)
@@ -355,7 +357,7 @@ while True:
                 most_common, count = counts.most_common(1)[0]
 
                 if (most_common is not None
-                        and count >= DETECTION_BUFFER_SIZE * 0.7
+                        and count >= DETECTION_BUFFER_SIZE * 0.8
                         and most_common != current_exercise_key
                         and (current_time - last_switch_time) > SWITCH_COOLDOWN):
 
