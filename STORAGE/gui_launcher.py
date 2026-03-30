@@ -20,8 +20,8 @@ def launch_setup_gui():
     
     result = {}
 
-    # Premium "Light Mode" Aesthetics (Soft Pleasing with Depth)
-    APP_STYLESHEET = """
+    # --- PRESET THEMES ---
+    LIGHT_STYLESHEET = """
     * {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
@@ -133,6 +133,18 @@ def launch_setup_gui():
     QPushButton#CardButton:hover {
         background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5AA0F2, stop:1 #458ACD);
     }
+
+    QPushButton#ThemeToggle {
+        background-color: #F1F5F9;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 8px 15px;
+        font-weight: 700;
+        color: #2D3748;
+    }
+    QPushButton#ThemeToggle:hover {
+        background-color: #E2E8F0;
+    }
     
     /* Activity List */
     QFrame#HistoryBox {
@@ -145,6 +157,7 @@ def launch_setup_gui():
     QWidget#GoldRow { background-color: #FFF9E6; border-radius: 16px; }
     QWidget#SilverRow { background-color: #F7FAFC; border-radius: 16px; }
     QWidget#BronzeRow { background-color: #FFF5F2; border-radius: 16px; }
+    QWidget#StandardRow { background-color: transparent; border-radius: 16px; }
     
     QLabel#HistTitle {
         color: #2D3748;
@@ -161,7 +174,186 @@ def launch_setup_gui():
         font-size: 26px;
         font-weight: 900;
     }
+    
+    QLabel#AIStatus {
+        background-color: rgba(16, 185, 129, 0.1); 
+        color: #10B981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 12px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
     """
+
+    DARK_STYLESHEET = """
+    * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    QScrollArea {
+        border: none;
+        background-color: #0F172A;
+    }
+    QWidget#MainContainer {
+        background-color: #0F172A;
+    }
+    
+    /* Top Navbar */
+    QWidget#NavBar {
+        background-color: #1E293B;
+        border-bottom: 2px solid #334155;
+    }
+    
+    QLabel#Logo {
+        color: #F1F5F9;
+        font-size: 30px;
+        font-weight: 900;
+        letter-spacing: 2px;
+    }
+    
+    QLineEdit#NavInput, QComboBox#NavInput {
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: 1px solid #475569;
+        font-size: 15px;
+        font-weight: 600;
+        background-color: #0F172A;
+        color: #F1F5F9;
+    }
+    QLineEdit#NavInput:focus, QComboBox#NavInput:focus {
+        border: 2px solid #38B2AC;
+        background-color: #1E293B;
+    }
+    
+    /* Hero Section (Deep Dark Gradient) */
+    QWidget#Hero {
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1E40AF, stop:0.4 #312E81, stop:1 #4F46E5);
+        border: 1px solid #334155;
+        border-radius: 24px;
+    }
+    QLabel#HeroTitle {
+        color: #FFFFFF;
+        font-size: 48px;
+        font-weight: 900;
+        margin-bottom: 5px;
+        letter-spacing: -2px;
+    }
+    QLabel#HeroSub {
+        color: #E2E8F0;
+        font-size: 20px;
+        font-weight: 500;
+    }
+    
+    /* Section Headings */
+    QLabel#SectionTitle {
+        color: #F1F5F9;
+        font-size: 28px;
+        font-weight: 900;
+        margin-top: 45px;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    /* Workout Cards (Floating depth) */
+    QFrame#HoverCard {
+        background-color: #1E293B;
+        border-radius: 24px;
+        border: 1px solid #334155;
+    }
+    
+    QLabel#CardTitle {
+        color: #F1F5F9;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
+    QLabel#CardDesc {
+        color: #94A3B8;
+        font-size: 15px;
+        font-weight: 500;
+    }
+    QLabel#Tag {
+        background-color: #334155;
+        color: #38B2AC;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 12px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    
+    QPushButton#CardButton {
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #38B2AC, stop:1 #2C7A7B);
+        color: #FFFFFF;
+        font-size: 16px;
+        font-weight: 800;
+        border-radius: 25px;
+        padding: 18px;
+        border: none;
+    }
+    QPushButton#CardButton:hover {
+        background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4FD1C5, stop:1 #38B2AC);
+    }
+
+    QPushButton#ThemeToggle {
+        background-color: #334155;
+        border: 1px solid #475569;
+        border-radius: 12px;
+        padding: 8px 15px;
+        font-weight: 700;
+        color: #F1F5F9;
+    }
+    QPushButton#ThemeToggle:hover {
+        background-color: #475569;
+    }
+    
+    /* Activity List */
+    QFrame#HistoryBox {
+        background-color: #1E293B;
+        border-radius: 28px;
+        border: 1px solid #334155;
+    }
+    
+    /* Top Rank Highlights (Dark variants) */
+    QWidget#GoldRow { background-color: #3B2E0A; border-radius: 16px; }
+    QWidget#SilverRow { background-color: #1E293B; border-radius: 16px; }
+    QWidget#BronzeRow { background-color: #3B1B10; border-radius: 16px; }
+    QWidget#StandardRow { background-color: transparent; border-radius: 16px; }
+    
+    QLabel#HistTitle {
+        color: #F1F5F9;
+        font-size: 19px;
+        font-weight: 800;
+    }
+    QLabel#HistSub {
+        color: #94A3B8;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    QLabel#HistScore {
+        color: #4ADE80;
+        font-size: 26px;
+        font-weight: 900;
+    }
+    
+    QLabel#AIStatus {
+        background-color: rgba(56, 178, 172, 0.1); 
+        color: #38B2AC;
+        border: 1px solid rgba(56, 178, 172, 0.3);
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 12px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    """
+
 
     class HoverCard(QFrame):
         """Custom interactive card with real 3D Drop Shadows for a massively interactive feel."""
@@ -217,18 +409,25 @@ def launch_setup_gui():
         def enterEvent(self, event):
             # Premium "Light Elevation" Effect
             self.shadow.setBlurRadius(50)
-            self.shadow.setColor(QColor(0, 0, 0, 25))
+            self.shadow.setColor(QColor(0, 0, 0, 35) if self.parent_window.current_theme == "light" else QColor(0, 0, 0, 60))
             self.shadow.setOffset(0, 15)
             
-            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 24px; border: 2px solid #4A90E2; margin-top: -8px; margin-bottom: 8px; }")
+            accent = "#4A90E2" if self.parent_window.current_theme == "light" else "#38B2AC"
+            bg = "#FFFFFF" if self.parent_window.current_theme == "light" else "#1E293B"
+            
+            self.setStyleSheet(f"QFrame#HoverCard {{ background-color: {bg}; border-radius: 24px; border: 2px solid {accent}; margin-top: -8px; margin-bottom: 8px; }}")
             super().enterEvent(event)
             
         def leaveEvent(self, event):
             # Return to base light state
             self.shadow.setBlurRadius(25)
-            self.shadow.setColor(QColor(0, 0, 0, 15))
+            self.shadow.setColor(QColor(0, 0, 0, 15) if self.parent_window.current_theme == "light" else QColor(0, 0, 0, 40))
             self.shadow.setOffset(0, 10)
-            self.setStyleSheet("QFrame#HoverCard { background-color: #FFFFFF; border-radius: 24px; border: 1px solid #E2E8F0; margin-top: 0px; margin-bottom: 0px; }")
+            
+            bg = "#FFFFFF" if self.parent_window.current_theme == "light" else "#1E293B"
+            border = "#E2E8F0" if self.parent_window.current_theme == "light" else "#334155"
+            
+            self.setStyleSheet(f"QFrame#HoverCard {{ background-color: {bg}; border-radius: 24px; border: 1px solid {border}; margin-top: 0px; margin-bottom: 0px; }}")
             super().leaveEvent(event)
 
         def trigger_workout(self):
@@ -277,7 +476,8 @@ def launch_setup_gui():
             super().__init__()
             self.setWindowTitle("THR Training Framework")
             self.resize(1150, 850)
-            self.setStyleSheet(APP_STYLESHEET)
+            self.current_theme = "light"
+            self.setStyleSheet(LIGHT_STYLESHEET)
             
             # Parent scroll area
             scroll = QScrollArea(self)
@@ -309,6 +509,12 @@ def launch_setup_gui():
             logo = QLabel("THR FITNESS")
             logo.setObjectName("Logo")
             nav_layout.addWidget(logo)
+            
+            nav_layout.addSpacing(25)
+            ai_badge = QLabel("● LOCAL AI READY")
+            ai_badge.setObjectName("AIStatus")
+            nav_layout.addWidget(ai_badge)
+            
             nav_layout.addStretch()
             
             self.nav_user = QLineEdit()
@@ -322,9 +528,18 @@ def launch_setup_gui():
             self.nav_voice.setFixedWidth(180)
             self.nav_voice.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             
+            # --- Theme Toggle ---
+            self.theme_btn = QPushButton("🌙 DARK MODE")
+            self.theme_btn.setObjectName("ThemeToggle")
+            self.theme_btn.setFixedWidth(140)
+            self.theme_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            self.theme_btn.clicked.connect(self.toggle_theme)
+
             nav_layout.addWidget(self.nav_user)
             nav_layout.addSpacing(15)
             nav_layout.addWidget(self.nav_voice)
+            nav_layout.addSpacing(15)
+            nav_layout.addWidget(self.theme_btn)
             page_layout.addWidget(navbar)
             
             # --- 2. Content Wrapper ---
@@ -505,6 +720,20 @@ def launch_setup_gui():
             parent_layout = QVBoxLayout(self)
             parent_layout.setContentsMargins(0, 0, 0, 0)
             parent_layout.addWidget(scroll)
+
+        def toggle_theme(self):
+            if self.current_theme == "light":
+                self.current_theme = "dark"
+                self.setStyleSheet(DARK_STYLESHEET)
+                self.theme_btn.setText("☀️ LIGHT MODE")
+            else:
+                self.current_theme = "light"
+                self.setStyleSheet(LIGHT_STYLESHEET)
+                self.theme_btn.setText("🌙 DARK MODE")
+            
+            # Refresh all HoverCards to update their internal styles
+            # (Though they mostly use IDs, the shadows/dynamic borders need a reload if we were caching them)
+            # This toggle will naturally affect new hover events.
 
     # Launch it!
     window = AppDashboard()
