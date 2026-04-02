@@ -46,6 +46,8 @@ from exercises import (
     PlankExercise,
     CrunchExercise,
 )
+from temporal_analyzer import TemporalPostureAnalyzer
+from ai_coach import AICoach
 # --- AI Coach removed ---
 
 # -----------------------------------------
@@ -97,7 +99,9 @@ else:
         print(f"Error launching setup: {e}")
         sys.exit(1)
 
-ai_coach = None
+# Initialize AI Coach and Temporal Analyzer
+ai_coach = AICoach()
+temporal_analyzer = TemporalPostureAnalyzer()
 
 # -----------------------------------------
 # Audio Coach Setup
@@ -144,7 +148,37 @@ paused = False
 # AI Coaching tracking
 last_ai_tip_time = time.time()
 AI_TIP_INTERVAL = 10.0  # seconds
-current_ai_tip = "AI Coach is analyzing your form..."
+current_ai_tip = "Llama-3 is analyzing your posture..."
+
+def on_ai_tip_received(tip):
+    """Callback for AICoach to update the UI and announce tip."""
+    global current_ai_tip
+    current_ai_tip = tip
+    print(f"  [AI Coach (Llama)] New coaching tip: {tip}")
+    audio_mgr.speak_feedback(tip)
+
+
+def resize_with_padding(img, target_size=(1280, 720)):
+    """Resize an image while preserving aspect ratio, filling extra space with black."""
+    target_w, target_h = target_size
+    h, w = img.shape[:2]
+
+    # Calculate scaling factor
+    scale = min(target_w / w, target_h / h)
+    new_w, new_h = int(w * scale), int(h * scale)
+
+    # Resize input image
+    resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    # Create a black background (canvas)
+    canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+
+    # Center the resized image on the canvas
+    x_offset = (target_w - new_w) // 2
+    y_offset = (target_h - new_h) // 2
+    canvas[y_offset : y_offset + new_h, x_offset : x_offset + new_w] = resized
+
+    return canvas
 
 
 def classify_exercise(landmarks):
@@ -275,6 +309,10 @@ while True:
         if use_mirror:
             frame = cv2.flip(frame, 1)
 
+        # STANDARDIZE RESOLUTION: Resize with padding (letterboxing)
+        # This keeps the original aspect ratio to ensure body angles are accurate
+        frame = resize_with_padding(frame, (DISPLAY_W, DISPLAY_H))
+
         # Process pose
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = pose.process(rgb_frame)
@@ -293,6 +331,10 @@ while True:
             )
 
             landmarks = result.pose_landmarks.landmark
+            
+            # --- Temporal Analysis (LSTM-like tracking) ---
+            temporal_analyzer.update(landmarks)
+            temporal_metrics = temporal_analyzer.analyze()
 
             # --- Detect exercise ---
             detected = classify_exercise(landmarks)
@@ -332,7 +374,22 @@ while True:
                     print(f"\n  [ERROR] in {current_exercise_key} process: {e}")
                     traceback.print_exc()
 
-            # --- Periodic AI Coaching removed ---
+            # --- Periodic AI Coaching (Llama-3 Tips) ---
+            if current_exercise and (current_time - last_ai_tip_time > AI_TIP_INTERVAL):
+                last_ai_tip_time = current_time
+                current_ai_tip = "Analyzing movement trends..." # Visual indicator it's working
+                
+                # Bundle metrics for Llama
+                summary = temporal_analyzer.get_summary_for_llm(temporal_metrics)
+                metrics = {
+                    'exercise': current_exercise.NAME,
+                    'count': getattr(current_exercise, 'counter', 0) or getattr(current_exercise, 'hold_duration', 0),
+                    'score': current_exercise.score,
+                    'feedback': current_exercise.feedback,
+                    'temporal_summary': summary
+                }
+                
+                ai_coach.get_coaching_tip_async(metrics, on_ai_tip_received)
 
         # --- Status bars ---
         h, w = frame.shape[:2]
@@ -367,7 +424,10 @@ while True:
         cv2.putText(frame, f"FPS: {int(fps)}", (w - 150, h - 18),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1)
 
-        # --- AI Coaching tooltip removed ---
+        # --- AI Coaching tooltip ---
+        cv2.rectangle(frame, (10, 175), (550, 205), (0, 0, 0), -1)
+        cv2.putText(frame, f"AI Tips (Llama-3): {current_ai_tip}", (20, 195),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 200, 255), 1)
 
         # Controls hint
         controls = "Q: Quit | R: Reset | M: Mute | P: Pause" if source_desc != "Webcam" else "Q: Quit | R: Reset | M: Mute"
@@ -387,9 +447,8 @@ while True:
         cv2.putText(frame, "PAUSED", (w // 2 - 80, h // 2 + 12),
                     cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 200, 255), 3)
 
-    # --- Resize and display ---
-    display_frame = cv2.resize(frame, (DISPLAY_W, DISPLAY_H))
-    cv2.imshow("AI Exercise Detector & Trainer", display_frame)
+    # --- Display ---
+    cv2.imshow("AI Exercise Detector & Trainer", frame)
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
